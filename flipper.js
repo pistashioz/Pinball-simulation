@@ -7,8 +7,9 @@ const leftFlipper = {
   width: 100,
   height: 10,
   angle: 0,
-  angularSpeed: 3,
+  angularSpeed: 10,
   maxAngle: 30, // Maximum rotation angle
+  a: 0.1
 };
 
 const rightFlipper = {
@@ -17,8 +18,9 @@ const rightFlipper = {
   width: 100,
   height: 10,
   angle: 0,
-  angularSpeed: 3,
+  angularSpeed: 10,
   maxAngle: 30, // Maximum rotation angle
+  a: 0.1
 };
 
 function drawLeftFlipper(flipper) {
@@ -51,16 +53,17 @@ function update() {
   if (leftKeyIsPressed) {
     leftFlipper.angle += leftFlipper.angularSpeed;
   } else {
-    leftFlipper.angle = -30;
+    leftFlipper.angle -= leftFlipper.angularSpeed;
   }
 
   // Update the right flipper angle
   if (rightKeyIsPressed) {
     rightFlipper.angle -= rightFlipper.angularSpeed;
   } else {
-    rightFlipper.angle = 30;
+    rightFlipper.angle += rightFlipper.angularSpeed;
+    
   }
-
+  
   // Draw the flippers
   drawLeftFlipper(leftFlipper);
   drawRightFlipper(rightFlipper);
