@@ -31,6 +31,10 @@ class Ball {
     this.radius = radius;
     this.speedX = speedX;
     this.speedY = speedY;
+    //this.bounce = 0.7; //  Bounce factor rubber ball (RUBBER BALL)
+    this.gravity = 0.5; // Gravity factor rubber ball (RUBBER BALL)7
+    this.friction = 0.98; //FOR WOODEN BALL IS 0.95
+    this.restitution = 0.2; //FOR WOODEN IS 0.8
   }
 
   draw() {
@@ -39,6 +43,10 @@ class Ball {
     ctx.fillStyle = "#00ff00"; // Green color
     ctx.fill();
     ctx.closePath();
+  }
+  applyFriction() {
+    this.speedX *= this.friction;
+    this.speedY *= this.friction;
   }
 }
 
@@ -52,13 +60,19 @@ function update() {
   ball.x += ball.speedX;
   ball.y += ball.speedY;
 
+    // Apply gravity
+   ball.speedY += ball.gravity;
+
+
   // Ball collisions with the canvas boundaries
   if (ball.x < ball.radius || ball.x > canvas.width - ball.radius) {
-    ball.speedX *= -1; // Reverse horizontal direction if the ball hits the canvas horizontal limits
+    ball.speedX *= -1 * ball.restitution// Reverse horizontal direction if the ball hits the canvas horizontal limits
+    ball.applyFriction()
   }
 
   if (ball.y < ball.radius) {
-    ball.speedY *= -1; // Reverse vertical direction if the ball hits the canvas vertical limits
+    ball.speedY *= -1 * ball.restitution// * ball.bounce; RUBBER// Reverse and reduce vertical direction if the ball hits the canvas vertical limits
+    ball.applyFriction()
   }
 
   // Ball collision with the left flipper
@@ -68,7 +82,7 @@ function update() {
     ball.y > leftFlipper.y - ball.radius - leftFlipper.height / 2 &&
     ball.y < leftFlipper.y + ball.radius + leftFlipper.height / 2
   ) {
-    ball.speedY *= -1; // Reverse vertical direction
+    ball.speedY *= -1 // * ball.bounce; RUBBER // Reverse and reduce vertical speed;
   }
 
   // Ball collision with the right flipper
@@ -94,6 +108,8 @@ function update() {
   } else {
     rightFlipper.angle += rightFlipper.angularSpeed;
   }
+
+  ball.applyFriction()
 
   // Draw the flippers and ball
   ball.draw();
