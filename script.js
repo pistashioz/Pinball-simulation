@@ -280,42 +280,45 @@ const arcRadius = 100;
 const arcStartAngle = 0; // Starting at the top of the circle
 const arcEndAngle = -2.5; // Specific angle for the arc ending
 
+
 // Update and draw each ball
 ballsArray.forEach(ball => {
   if (!ball.onThrowingMechanism) {
     ball.speedY += 0.2; // Apply gravity effect
+
+          // Determine the current angle based on the ball's position
+    let ballAngle = Math.atan2(ball.y - arcCenterY, ball.x - arcCenterX);
     
     // Check if the ball is in the exit path region
-    if (ball.x > W - 150 && ball.y < 150) {
-      // Determine the current angle based on the ball's position
-      let angle = Math.atan2(ball.y - arcCenterY, ball.x - arcCenterX);
+    if (ballAngle <= arcStartAngle &&  ballAngle >= arcEndAngle) {
 
-      // Check if the ball is within the arc angle range
-      if (angle <= arcStartAngle && angle >= arcEndAngle) {
+
         // Move the ball along the arc
-        angle -= 0.05; // This value controls the speed of the ball along the arc
-        ball.x = arcCenterX + arcRadius * Math.cos(angle);
-        ball.y = arcCenterY + arcRadius * Math.sin(angle);
+        console.log(throwingMechanism.compressionTime);
+        console.log(throwingMechanism.compressionTime*0.2);
+        ballAngle -= 0.1 //throwingMechanism.compressionTime; // This value controls the speed of the ball along the arc
+
+        ball.x = arcCenterX + arcRadius * Math.cos(ballAngle);
+        ball.y = arcCenterY + arcRadius * Math.sin(ballAngle);
 
         // Adjust speed to be tangent to the arc
-        ball.speedX = -Math.abs(arcRadius * Math.cos(angle));
-        ball.speedY = -Math.abs(arcRadius * Math.sin(angle));
-      } else {
-        // If the ball has moved past the arc, set a new velocity based on the compression time
-        const exitSpeed = Math.min(throwingMechanism.compressionTime * 0.1, 5); // The max exit speed is capped at 5
-        console.log(exitSpeed + " seconds");
-        //ball.speedX = 5;
+        ball.speedX = -Math.abs(arcRadius * Math.cos(ballAngle));
+        ball.speedY = -Math.abs(arcRadius * Math.sin(ballAngle)) ;
+        
+       if (ballAngle <= arcEndAngle) {
+    
+        const exitSpeed = Math.min(throwingMechanism.compressionTime * 0.1, 5); // Cap the speed to a max value
+        ball.speedX =  -1.3 ;
         ball.speedY = exitSpeed;
-        ball.x += ball.speedX;
-        ball.y += ball.speedY;
+
         throwingMechanism.compressionTime = 0; // Reset the compression time
-      }
-    } else {
-      // Normal movement
-      ball.x += ball.speedX;
-      ball.y += ball.speedY;
-    }
-  } else {
+       }
+    }  else {
+        ball.x += ball.speedX;
+        ball.y += ball.speedY;}
+
+
+      } else {
     // Make the ball follow the mechanism
     ball.y = throwingMechanism.y - ball.radius;
   }
@@ -350,7 +353,8 @@ ballsArray.forEach(ball => {
     if (throwingMechanism.height > 16) {
       throwingMechanism.height -= 1;
       throwingMechanism.y += 1;
-      throwingMechanism.compressionTime++; // Increase compression time
+      throwingMechanism.compressionTime += 0.5; // Increase compression time
+      
     }
   } else {
     if (throwingMechanism.compressionTime > 0) {
@@ -366,7 +370,7 @@ ballsArray.forEach(ball => {
       });
 
       // Reset compression time and restore mechanism's height
-      throwingMechanism.compressionTime = 0;
+      //throwingMechanism.compressionTime -= 0.05;
 
     }
 
