@@ -1,7 +1,10 @@
 // get the canvas and context
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+let b = new Array(); // balls (array of objects)
+const W = canvas.width, H = canvas.height;
 //class defining (flipper and ball)
+const obstacles = []
 class Flipper {
   constructor(x, y, width, height, angularSpeed, maxAngle) {
     this.x = x;
@@ -18,7 +21,7 @@ class Flipper {
     ctx.translate(this.x - this.width / 2, this.y - this.height / 2);
     this.angle = Math.min(Math.max(-this.maxAngle, this.angle), this.maxAngle);
     ctx.rotate(-Math.PI / 180 * this.angle);
-    ctx.fillStyle = "#ff0000"; // Red color
+    ctx.fillStyle = "#90BE6D"; // Green color
     ctx.fillRect(0, 0, this.width, this.height);
     ctx.restore();
   }
@@ -40,7 +43,7 @@ class Ball {
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "#00ff00"; // Green color
+    ctx.fillStyle = "#255f85"; // Blue color
     ctx.fill();
     ctx.closePath();
   }
@@ -50,9 +53,45 @@ class Ball {
   }
 }
 
+class Obstacle {
+  constructor(x, y, r) {
+    this.x = x;
+    this.y = y;
+    this.r = r;
+    obstacles.push(this)
+}
+
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI);
+    ctx.fillStyle = "#ffc857"; // Green color
+    ctx.fill();
+    ctx.closePath();
+  }
+
+}
+
 const leftFlipper = new Flipper(canvas.width * 0.37, canvas.height - 80, 100, 10, 10, 30);
 const rightFlipper = new Flipper(canvas.width * 0.62, canvas.height - 80, -100, -10, 10, 30);
-const ball = new Ball(canvas.width / 2, 30, 10, 10, 10);
+const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
+const obstacleCenter = new Obstacle(canvas.width/2, canvas.height/2 - 50, 15)
+const obstacleUpperRight = new Obstacle(canvas.width/2 + 100, canvas.height/2 - 150, 15)
+const obstacleUpperLeft = new Obstacle(canvas.width/2 - 100 , canvas.height/2 - 150, 15)
+const obstacleDownRight = new Obstacle(canvas.width/2 + 100, canvas.height/2 + 50, 15)
+const obstacleDownLeft = new Obstacle(canvas.width/2 - 100, canvas.height/2 + 50, 15)
+
+function checkBallObstacleCollision(ball, obstacle) {
+  const dx = ball.x - obstacle.x;
+  const dy = ball.y - obstacle.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance < ball.radius + obstacle.r) {
+    // Collision detected
+    return true;
+  }
+
+  return false;
+}
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -61,18 +100,16 @@ function update() {
   ball.y += ball.speedY;
 
     // Apply gravity
-   ball.speedY += ball.gravity;
+   //ball.speedY += ball.gravity;
 
 
   // Ball collisions with the canvas boundaries
   if (ball.x < ball.radius || ball.x > canvas.width - ball.radius) {
-    ball.speedX *= -1 * ball.restitution// Reverse horizontal direction if the ball hits the canvas horizontal limits
-    ball.applyFriction()
+    ball.speedX *= -1 
   }
 
   if (ball.y < ball.radius) {
-    ball.speedY *= -1 * ball.restitution// * ball.bounce; RUBBER// Reverse and reduce vertical direction if the ball hits the canvas vertical limits
-    ball.applyFriction()
+    ball.speedY *= -1
   }
 
   // Ball collision with the left flipper
@@ -95,6 +132,13 @@ function update() {
     ball.speedY *= -1; // Reverse vertical direction
   }
 
+  for (const obstacle of obstacles) {
+    if (checkBallObstacleCollision(ball, obstacle)) {
+      // Handle collision, e.g., reverse ball direction or apply some effect
+      ball.speedY *= -1; // Reverse vertical direction
+    }
+  }
+
   // Update the left flipper angle
   if (leftKeyIsPressed) {
     leftFlipper.angle += leftFlipper.angularSpeed;
@@ -109,15 +153,21 @@ function update() {
     rightFlipper.angle += rightFlipper.angularSpeed;
   }
 
-  ball.applyFriction()
+  
 
   // Draw the flippers and ball
   ball.draw();
   leftFlipper.draw();
   rightFlipper.draw();
+  obstacleCenter.draw();
+  obstacleUpperRight.draw();
+  obstacleUpperLeft.draw();
+  obstacleDownLeft.draw();
+  obstacleDownRight.draw()
 
   requestAnimationFrame(update);
 }
+
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
