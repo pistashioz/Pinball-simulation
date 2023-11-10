@@ -3,8 +3,9 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let b = new Array(); // balls (array of objects)
 const W = canvas.width, H = canvas.height;
-//class defining (flipper and ball)
-const obstacles = []
+let isMouseDown = false;
+let focused = { state: false, key: null };
+
 class Flipper {
   constructor(x, y, width, height, angularSpeed, maxAngle) {
     this.x = x;
@@ -58,7 +59,6 @@ class Obstacle {
     this.x = x;
     this.y = y;
     this.r = r;
-    obstacles.push(this)
 }
 
   draw() {
@@ -74,11 +74,13 @@ class Obstacle {
 const leftFlipper = new Flipper(canvas.width * 0.37, canvas.height - 80, 100, 10, 10, 30);
 const rightFlipper = new Flipper(canvas.width * 0.62, canvas.height - 80, -100, -10, 10, 30);
 const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
-const obstacleCenter = new Obstacle(canvas.width/2, canvas.height/2 - 50, 15)
-const obstacleUpperRight = new Obstacle(canvas.width/2 + 100, canvas.height/2 - 150, 15)
-const obstacleUpperLeft = new Obstacle(canvas.width/2 - 100 , canvas.height/2 - 150, 15)
-const obstacleDownRight = new Obstacle(canvas.width/2 + 100, canvas.height/2 + 50, 15)
-const obstacleDownLeft = new Obstacle(canvas.width/2 - 100, canvas.height/2 + 50, 15)
+const obstacles = [
+  new Obstacle(W / 2, H / 2 - 50, 15),
+  new Obstacle(W / 2 + 100, H / 2 - 150, 15),
+  new Obstacle(W / 2 - 100, H / 2 - 150, 15),
+  new Obstacle(W / 2 + 100, H / 2 + 50, 15),
+  new Obstacle(W / 2 - 100, H / 2 + 50, 15),
+];
 
 function checkBallObstacleCollision(ball, obstacle) {
   const dx = ball.x - obstacle.x;
@@ -92,6 +94,81 @@ function checkBallObstacleCollision(ball, obstacle) {
 
   return false;
 }
+function draw(){
+      //clear canvas
+      ctx.clearRect(0, 0, W, H);
+      leftFlipper.draw();
+      rightFlipper.draw();
+      for (const obstacle of obstacles) {
+        obstacle.draw();
+      }
+}
+function move(e) {
+  if (!isMouseDown) {
+    return;
+  }
+  getMousePosition(e);
+
+  if (focused.state) {
+    obstacles[focused.key].x = mousePosition.x;
+    obstacles[focused.key].y = mousePosition.y;
+    draw();
+    return;
+  }
+
+  for (var i = 0; i < obstacles.length; i++) {
+    if (intersects(obstacles[i])) {
+      focused.state = true;
+      focused.key = i;
+      break;
+    }
+  }
+
+  draw();
+}
+
+
+function setDraggable(e) {
+  var t = e.type;
+  if (t === "mousedown") {
+    isMouseDown = true;
+  } else if (t === "mouseup") {
+    isMouseDown = false;
+    releaseFocus();
+  }
+}
+
+
+function releaseFocus(){
+  focused.state = false
+}
+
+function getMousePosition(e){
+  var rect = canvas.getBoundingClientRect();
+  mousePosition = {
+    x: Math.round(e.x - rect.left),
+    y: Math.round(e.y - rect.top)
+  }
+}
+function intersects(obstacle) {
+  // subtract the x, y coordinates from the mouse position to get coordinates 
+  // for the hotspot location and check against the area of the radius
+  var areaX = mousePosition.x - obstacle.x;
+  var areaY = mousePosition.y - obstacle.y;
+  //return true if x^2 + y^2 <= radius squared.
+  return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
+}
+
+Array.prototype.move = function (old_index, new_index) {
+  if (new_index >= this.length) {
+      var k = new_index - this.length;
+      while ((k--) + 1) {
+          this.push(undefined);
+      }
+  }
+  this.splice(new_index, 0, this.splice(old_index, 1)[0]);
+};
+draw();
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -159,11 +236,9 @@ function update() {
   ball.draw();
   leftFlipper.draw();
   rightFlipper.draw();
-  obstacleCenter.draw();
-  obstacleUpperRight.draw();
-  obstacleUpperLeft.draw();
-  obstacleDownLeft.draw();
-  obstacleDownRight.draw()
+  for (const obstacle of obstacles) {
+    obstacle.draw();
+  }
 
   requestAnimationFrame(update);
 }
@@ -187,5 +262,8 @@ document.addEventListener("keyup", (event) => {
     rightKeyIsPressed = false;
   }
 });
+canvas.addEventListener("mousedown", setDraggable);
+canvas.addEventListener("mousemove", move);
+canvas.addEventListener("mouseup", setDraggable);
 
 update();
