@@ -1,5 +1,4 @@
 # Pinball-simulation
-# Pinball Simulator
 
 Welcome to the Pinball Simulator project! This simulator provides an immersive experience, simulating the physics and dynamics of a classic pinball game. It is designed to offer users an interactive journey through the fundamental principles of physics and motion in a pinball environment.
 
