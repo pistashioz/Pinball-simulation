@@ -59,16 +59,25 @@ class Obstacle {
     this.x = x;
     this.y = y;
     this.r = r;
-}
+    this.shakeFrames = 5;
+    this.shakeMagnitude = 5; // Adjust the magnitude of the shake
+  }
 
   draw() {
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, 2*Math.PI);
+    ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
     ctx.fillStyle = "#ffc857"; // Green color
     ctx.fill();
     ctx.closePath();
   }
 
+  shake() {
+    if (this.shakeFrames > 0) {
+      this.x += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
+      this.y += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
+      this.shakeFrames--;
+    }
+  }
 }
 
 const leftFlipper = new Flipper(canvas.width * 0.37, canvas.height - 80, 100, 10, 10, 30);
@@ -89,6 +98,7 @@ function checkBallObstacleCollision(ball, obstacle) {
 
   if (distance < ball.radius + obstacle.r) {
     // Collision detected
+    obstacle.shakeFrames = 10;
     return true;
   }
 
@@ -103,6 +113,7 @@ function draw(){
         obstacle.draw();
       }
 }
+
 function move(e) {
   if (!isMouseDown) {
     return;
@@ -120,6 +131,7 @@ function move(e) {
     if (intersects(obstacles[i])) {
       focused.state = true;
       focused.key = i;
+      obstacles[i].r = 20;
       break;
     }
   }
@@ -133,6 +145,11 @@ function setDraggable(e) {
   if (t === "mousedown") {
     isMouseDown = true;
   } else if (t === "mouseup") {
+    for (var i = 0; i < obstacles.length; i++) {
+      if (intersects(obstacles[i])) {
+        obstacles[i].r = 15;
+      }
+    }
     isMouseDown = false;
     releaseFocus();
   }
@@ -210,9 +227,11 @@ function update() {
   }
 
   for (const obstacle of obstacles) {
+    obstacle.shake()
     if (checkBallObstacleCollision(ball, obstacle)) {
-      // Handle collision, e.g., reverse ball direction or apply some effect
+      // Reverse ball direction and apply shake effect on obstacle
       ball.speedY *= -1; // Reverse vertical direction
+      //cambiar la posicion frame por frame
     }
   }
 
@@ -242,7 +261,6 @@ function update() {
 
   requestAnimationFrame(update);
 }
-
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
