@@ -5,6 +5,7 @@ let b = new Array(); // balls (array of objects)
 const W = canvas.width, H = canvas.height;
 let isMouseDown = false;
 let focused = { state: false, key: null };
+let pause = false
 
 class Flipper {
   constructor(x, y, width, height, angularSpeed, maxAngle) {
@@ -177,52 +178,53 @@ function intersects(obstacle) {
 }
 
 draw();
-
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  //updating the x and y ball coordinates
-  ball.x += ball.speedX;
-  ball.y += ball.speedY;
+
+  if (!pause) {
+    // Update the x and y ball coordinates
+    ball.x += ball.speedX;
+    ball.y += ball.speedY;
 
     // Apply gravity
-   //ball.speedY += ball.gravity;
+    // ball.speedY += ball.gravity;
 
+    // Ball collisions with the canvas boundaries
+    if (ball.x < ball.radius || ball.x > canvas.width - ball.radius) {
+      ball.speedX *= -1;
+    }
 
-  // Ball collisions with the canvas boundaries
-  if (ball.x < ball.radius || ball.x > canvas.width - ball.radius) {
-    ball.speedX *= -1 
-  }
+    if (ball.y < ball.radius) {
+      ball.speedY *= -1;
+    }
 
-  if (ball.y < ball.radius) {
-    ball.speedY *= -1
-  }
-
-  // Ball collision with the left flipper
-  if (
-    ball.x > leftFlipper.x - ball.radius - leftFlipper.width / 2 &&
-    ball.x < leftFlipper.x + ball.radius + leftFlipper.width / 2 &&
-    ball.y > leftFlipper.y - ball.radius - leftFlipper.height / 2 &&
-    ball.y < leftFlipper.y + ball.radius + leftFlipper.height / 2
-  ) {
-    ball.speedY *= -1 // * ball.bounce; RUBBER // Reverse and reduce vertical speed;
-  }
-
-  // Ball collision with the right flipper
-  if (
-    ball.x > rightFlipper.x - ball.radius - rightFlipper.width / 2 &&
-    ball.x < rightFlipper.x + ball.radius + rightFlipper.width / 2 &&
-    ball.y > rightFlipper.y - ball.radius - rightFlipper.height / 2 &&
-    ball.y < rightFlipper.y + ball.radius + rightFlipper.height / 2
-  ) {
-    ball.speedY *= -1; // Reverse vertical direction
-  }
-
-  for (const obstacle of obstacles) {
-    obstacle.shake()
-    if (checkBallObstacleCollision(ball, obstacle)) {
-      // Reverse ball direction and apply shake effect on obstacle
+    // Ball collision with the left flipper
+    if (
+      ball.x > leftFlipper.x - ball.radius - leftFlipper.width / 2 &&
+      ball.x < leftFlipper.x + ball.radius + leftFlipper.width / 2 &&
+      ball.y > leftFlipper.y - ball.radius - leftFlipper.height / 2 &&
+      ball.y < leftFlipper.y + ball.radius + leftFlipper.height / 2
+    ) {
       ball.speedY *= -1; // Reverse vertical direction
-      //cambiar la posicion frame por frame
+    }
+
+    // Ball collision with the right flipper
+    if (
+      ball.x > rightFlipper.x - ball.radius - rightFlipper.width / 2 &&
+      ball.x < rightFlipper.x + ball.radius + rightFlipper.width / 2 &&
+      ball.y > rightFlipper.y - ball.radius - rightFlipper.height / 2 &&
+      ball.y < rightFlipper.y + ball.radius + rightFlipper.height / 2
+    ) {
+      ball.speedY *= -1; // Reverse vertical direction
+    }
+
+    for (const obstacle of obstacles) {
+      obstacle.shake();
+      if (checkBallObstacleCollision(ball, obstacle)) {
+        // Reverse ball direction and apply shake effect on obstacle
+        ball.speedY *= -1; // Reverse vertical direction
+        //cambiar la posicion frame por frame
+      }
     }
   }
 
@@ -240,8 +242,6 @@ function update() {
     rightFlipper.angle += rightFlipper.angularSpeed;
   }
 
-  
-
   // Draw the flippers and ball
   ball.draw();
   leftFlipper.draw();
@@ -252,6 +252,17 @@ function update() {
 
   requestAnimationFrame(update);
 }
+
+//pause with the space bar
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === " ") {
+    pause = !pause
+    event.preventDefault()
+  }
+});
+
+
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
