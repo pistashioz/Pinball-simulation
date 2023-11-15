@@ -5,6 +5,7 @@ const ctx = canvas.getContext("2d");
 // Global variables for easier access
 const W = canvas.width;
 const H = canvas.height;
+const GRAVITY = 0.75;
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
@@ -76,13 +77,13 @@ class Ball {
   setMassBasedOnMaterial(material) {
     switch (material) {
       case 'steel':
-        return 80; // mass in grams for a steel ball
+        return 1; // mass in grams for a steel ball
       case 'wood':
-        return 40; // mass in grams for a wooden ball
+        return 0.5; // mass in grams for a wooden ball
       case 'rubber':
-        return 20; // mass in grams for a rubber ball
+        return 0.25; // mass in grams for a rubber ball
       default:
-        return 80; // default to steel if no material is matched
+        return 1; // default to steel if no material is matched
     }
   }
 
@@ -108,7 +109,7 @@ function createBall() {
   const speedY = 5; // Always start with the same upward speed
   // const newBall = new Ball(W / 2, 40, 10, speedX, speedY);
   // Place the second ball above the throwing mechanism
-  const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 120, 10, 0, speedY, 'steel');
+  const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 100, 10, 0, speedY, 'rubber');
   ballsArray.push(newBall);
 }
 
@@ -217,27 +218,42 @@ function handleCollisions() {
   const borderWidthRight = 46 + ctx.lineWidth; // Including the line width in the border size
   const throwingMechWidth = 58;
   const throwingMechTop = throwingMechanism.y;
+  const throwingMechBottom = throwingMechanism.y + throwingMechanism.height;
+
+  // Constants for collision handling
+  const BOUNCE_THRESHOLD = 2; // Minimum speed for bounce
+  const RESTITUTION = 0.3; // Bounce restitution factor
 
   ballsArray.forEach((ball, index) => {
     // Ball collision with the top of the throwing mechanism
-    if (!ball.onThrowingMechanism &&
-      ball.x >= throwingMechanism.x &&
-      ball.x <= throwingMechanism.x + throwingMechanism.width &&
-      ball.y + ball.radius >= throwingMechTop &&
-      ball.y + ball.radius <= throwingMechTop + ball.speedY) {
-      ball.speedY = -ball.speedY * 0.6; // Invert and reduce the speed to simulate a bounce
-      if (Math.abs(ball.speedY) < 1) { // If the speed is very low, stop the ball
-        ball.onThrowingMechanism = true;
-        ball.speedY = 0;
-        ball.y = throwingMechTop - ball.radius; // Adjust ball position to sit on the mechanism
+    if (ball.x >= throwingMechanism.x &&
+        ball.x <= throwingMechanism.x + throwingMechanism.width &&
+        ball.y + ball.radius >= throwingMechanism.y &&
+        ball.y - ball.radius <= throwingMechanism.y + throwingMechanism.height) {
+
+      // If the ball is moving downwards, check for a bounce
+      if (ball.speedY > 0) {
+        // Check if the bounce is significant enough to occur
+        if (Math.abs(ball.speedY) > BOUNCE_THRESHOLD) {
+          ball.speedY = -ball.speedY * RESTITUTION;
+        } else {
+          // If the bounce is too low, just set the ball on the mechanism
+          ball.onThrowingMechanism = true;
+          ball.speedY = 0;
+        }
+        
+        // Adjust the ball's position to be on top of the mechanism after the bounce
+        if (ball.y + ball.radius > throwingMechanism.y) {
+          ball.y = throwingMechanism.y - ball.radius;
+        }
       }
     }
-    // If the ball is on the throwing mechanism, stop checking for other collisions
-    if (ball.onThrowingMechanism) {
-      return;
+
+    // Update the position if the ball is not on the mechanism
+    if (!ball.onThrowingMechanism) {
+      ball.x += ball.speedX;
+      ball.y += ball.speedY;
     }
-
-
     // Top border collision
     if (ball.y - ball.radius < borderWidth && ball.speedY < 0) {
       ball.speedY *= -1;
@@ -300,7 +316,7 @@ const arcEndAngle = -1.6; // Specific angle for the arc ending
 // Update and draw each ball
 ballsArray.forEach(ball => {
   if (!ball.onThrowingMechanism) {
-    ball.speedY += 0.4; // Apply gravity effect
+    ball.speedY += GRAVITY; // Apply gravity effect
     
     // Determine the current angle based on the ball's position
     let ballAngle = Math.atan2(ball.y - arcCenterY, ball.x - arcCenterX);
@@ -389,20 +405,20 @@ ballsArray.forEach(ball => {
     if (throwingMechanism.height > 16) {
       throwingMechanism.height -= 1;
       throwingMechanism.y += 1;
-      throwingMechanism.compressionTime += 0.5; // Increase compression time
+      throwingMechanism.compressionTime += 60; // Increase compression time
       
     }
   } else {
     if (throwingMechanism.compressionTime > 0) {
       // Calculate force based on compression time
-      const force = Math.min(throwingMechanism.compressionTime, 100); // Cap the force to a max value
-
+     // const force = Math.min(throwingMechanism.compressionTime, 100); // Cap the force to a max value
+      const force = throwingMechanism.compressionTime * throwingMechanism.stiffness; 
+      console.log(`The force value is ${force}`);
       // Apply force to the ball that's on the mechanism
       ballsArray.forEach(ball => {
         if (ball.onThrowingMechanism) {
-          ball.speedY = -force; // Launch the ball upwards with the calculated force
-
-              
+          ball.speedY = -force / ball.mass; // Launch the ball upwards with the calculated force  
+          console.log(`The ball speed Y is ${ball.speedY}`);
           ball.speedX = 0;    // Reset the horizontal velocity if you want the ball to only move upwards
           ball.onThrowingMechanism = false; // The ball is no longer on the mechanism
         }
@@ -467,3 +483,5 @@ window.onload = () => {
   createBall();  // Start the game with one ball
   update();
 };
+
+
