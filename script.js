@@ -6,6 +6,8 @@ const ctx = canvas.getContext("2d");
 const W = canvas.width;
 const H = canvas.height;
 const GRAVITY = 0.75;
+const BOUNCE_THRESHOLD = 2.5; // Minimum speed for bounce
+
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
@@ -70,20 +72,28 @@ class Ball {
     this.speedX = speedX;
     this.speedY = speedY;
     this.material = material;
-    this.mass = this.setMassBasedOnMaterial(material);
     this.onThrowingMechanism = false;
+    this.inPlay = true;
+    this.setPhysicalProperties(material);
   }
   
-  setMassBasedOnMaterial(material) {
+  setPhysicalProperties(material) {
     switch (material) {
       case 'steel':
-        return 1; // mass in grams for a steel ball
+        this.mass = 1;
+        this.restitution = 0.15;
+        break;
       case 'wood':
-        return 0.5; // mass in grams for a wooden ball
+        this.mass = 0.5;
+        this.restitution = 0.3;
+        break;
       case 'rubber':
-        return 0.25; // mass in grams for a rubber ball
+        this.mass = 0.25;
+        this.restitution = 0.8;
+        break;
       default:
-        return 1; // default to steel if no material is matched
+        this.mass = 1;
+        this.restitution = 0.4;
     }
   }
 
@@ -109,7 +119,7 @@ function createBall() {
   const speedY = 5; // Always start with the same upward speed
   // const newBall = new Ball(W / 2, 40, 10, speedX, speedY);
   // Place the second ball above the throwing mechanism
-  const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 100, 10, 0, speedY, 'rubber');
+  const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 100, 10, 0, speedY, 'steel');
   ballsArray.push(newBall);
 }
 
@@ -211,18 +221,14 @@ function throwingMech() {
 
 
 }
-
+console.log(ballsArray);
 // Function to handle all ball collisions
 function handleCollisions() {
   const borderWidth = 20 + ctx.lineWidth; // Including the line width in the border size
   const borderWidthRight = 46 + ctx.lineWidth; // Including the line width in the border size
   const throwingMechWidth = 58;
-  const throwingMechTop = throwingMechanism.y;
-  const throwingMechBottom = throwingMechanism.y + throwingMechanism.height;
 
-  // Constants for collision handling
-  const BOUNCE_THRESHOLD = 2; // Minimum speed for bounce
-  const RESTITUTION = 0.3; // Bounce restitution factor
+
 
   ballsArray.forEach((ball, index) => {
     // Ball collision with the top of the throwing mechanism
@@ -235,7 +241,7 @@ function handleCollisions() {
       if (ball.speedY > 0) {
         // Check if the bounce is significant enough to occur
         if (Math.abs(ball.speedY) > BOUNCE_THRESHOLD) {
-          ball.speedY = -ball.speedY * RESTITUTION;
+          ball.speedY = -ball.speedY * ball.restitution;
         } else {
           // If the bounce is too low, just set the ball on the mechanism
           ball.onThrowingMechanism = true;
@@ -301,80 +307,78 @@ function update() {
   ctx.fillRect(26, 20, W, H);
 
   ctx.beginPath();
-  ctx.arc(W - 145, 140, 100, -0.5, -1.6, true);
+  ctx.arc(W - 149, 140, 100, 0, -1.6, true);
   ctx.stroke();
   ctx.closePath();
 
-// Define the arc parameters
-const arcCenterX = W - 145;
-const arcCenterY = 140;
-const arcRadius = 100;
-const arcStartAngle = -0.5; // Starting at the top of the circle
-const arcEndAngle = -1.6; // Specific angle for the arc ending
+  // Define the arc parameters
+  const arcCenterX = W - 149;
+  const arcCenterY = 140;
+  const arcRadius = 100;
+  const arcStartAngle = 0; // Starting at the top of the circle
+  const arcEndAngle = -1.6; // Specific angle for the arc ending
+  const MIN_VELOCITY_THRESHOLD = 1.5; // This value should be determined experimentally or calculated based on physics
 
+  // Update and draw each ball
+  ballsArray.forEach(ball => {
+    if (!ball.onThrowingMechanism && !ball.inPlay) {
+      // Apply gravity if the ball is not on the arc
+      ball.speedY += GRAVITY;
 
-// Update and draw each ball
-ballsArray.forEach(ball => {
-  if (!ball.onThrowingMechanism) {
-    ball.speedY += GRAVITY; // Apply gravity effect
-    
-    // Determine the current angle based on the ball's position
-    let ballAngle = Math.atan2(ball.y - arcCenterY, ball.x - arcCenterX);
-    
+      // Determine the current angle based on the ball's position
+      let ballAngle = Math.atan2(ball.y - arcCenterY, ball.x - arcCenterX);
 
-    console.log(throwingMechanism.compressionTime);
-    
-    // Check if the ball is still following the arc
-    if (ballAngle <= arcStartAngle && ballAngle >= arcEndAngle) {
-      //Check if the ball is moving upwards and has not yet lost all its upward force
-      
+      // Check if the ball is within the arc's angle range
+      if (!ball.inPlay && ballAngle <= arcStartAngle && ballAngle >= arcEndAngle ) {
+        // Calculate tangential velocity components based on the entry angle
+        let tangentVelocityMagnitude = Math.sqrt(ball.speedX * ball.speedX + ball.speedY * ball.speedY);
+        ball.speedX = tangentVelocityMagnitude * Math.cos(ballAngle - Math.PI / 2);
+        ball.speedY = tangentVelocityMagnitude * Math.sin(ballAngle - Math.PI / 2);
 
-
-      // Calculate the speed of the ball along the arc based on compression time
-      const arcSpeed = ball.speedY ; // Adjust as needed
-      
-      // Move the ball along the arc
-      ballAngle -= arcSpeed; // Control the speed of the ball along the arc
-      ball.x = arcCenterX + arcRadius * Math.cos(ballAngle);
-      ball.y = arcCenterY + arcRadius * Math.sin(ballAngle);
-      
-      // Adjust speed to be tangent to the arc
-      ball.speedX = -Math.abs(arcRadius * Math.cos(ballAngle));
-      ball.speedY = -Math.abs(arcRadius * Math.sin(ballAngle));
-      
-
-    } else {
-      // If the ball has moved past the arc, set a new velocity based on the compression time
-      /*if (ballAngle < arcEndAngle && throwingMechanism.compressionTime > 0) {
-        const exitSpeed = Math.min(throwingMechanism.compressionTime, 5); // Cap the speed to a max value
-        console.log(exitSpeed);
-        ball.speedX = exitSpeed * Math.cos(arcEndAngle); 
-        ball.speedY = exitSpeed * Math.sin(arcEndAngle);
-        
-        console.log(`The speed of the ball is ${ball.speedX} speedX and ${ball.speedY} speedY.`);
-
-        throwingMechanism.compressionTime = 0; // Reset the compression time
-      }*/
-            // Normal free fall motion if the ball is not on the arc path
-            ball.x += ball.speedX;
-  
-            ball.y += ball.speedY;
-
-            throwingMechanism.compressionTime = 0;
-          }
+        // Check if the ball's tangential velocity is enough to complete the arc
+        if (tangentVelocityMagnitude < MIN_VELOCITY_THRESHOLD) {
+          // Not enough velocity to complete the arc
+          // Reverse the direction and simulate the ball falling back down
+          ball.speedX = -ball.speedX * 0.5; // Reverse X velocity and apply some damping
+          ball.speedY = -ball.speedY * 0.5; // Reverse Y velocity and apply some damping
         } else {
-          // Make the ball follow the mechanism if it is on it
-            // Center the ball on the mechanism
-          ball.x = throwingMechanism.x + throwingMechanism.width / 2;
-          ball.y = throwingMechanism.y - ball.radius;
+          // Move the ball along the arc using the tangential velocity
+          ball.x += ball.speedX;
+          ball.y += ball.speedY;
+
+          // Adjust ball to stay on the arc
+          let distanceFromCenter = Math.sqrt((ball.x - arcCenterX) ** 2 + (ball.y - arcCenterY) ** 2);
+          if (distanceFromCenter != arcRadius) {
+            let correctionFactor = arcRadius / distanceFromCenter;
+            ball.x = arcCenterX + correctionFactor * (ball.x - arcCenterX);
+            ball.y = arcCenterY + correctionFactor * (ball.y - arcCenterY);
+          }
         }
+
+        // Check if ball has passed the end of the arc and is now in play
+        console.log(ballAngle);
+        if (ballAngle <= arcEndAngle) {
+          console.log('ball has passed the end of the arc');
+          ball.inPlay = true;
+        }
+      } else {
+        // Normal motion if the ball is not on the arc path
+        ball.x += ball.speedX;
+        ball.y += ball.speedY;
+
         
-        ball.draw();
-      });
-      
-      
-      
-     
+      }
+    } else if (ball.onThrowingMechanism) {
+      // Make the ball follow the mechanism if it is on it
+      ball.x = throwingMechanism.x + throwingMechanism.width / 2;
+      ball.y = throwingMechanism.y - ball.radius;
+      ball.inPlay = false; // Reset inPlay when ball is on the mechanism
+    }
+
+    ball.draw();
+  });
+
+
 
 
   drawShadows();
@@ -399,45 +403,50 @@ ballsArray.forEach(ball => {
     rightFlipper.angle += rightFlipper.angularSpeed;
   }
 
-  // If the down arrow key is pressed, reduce the height of the throwing mechanism
-  if (downKeyIsPressed) {
-
-    if (throwingMechanism.height > 16) {
-      throwingMechanism.height -= 1;
-      throwingMechanism.y += 1;
-      throwingMechanism.compressionTime += 60; // Increase compression time
-      
-    }
-  } else {
-    if (throwingMechanism.compressionTime > 0) {
-      // Calculate force based on compression time
-     // const force = Math.min(throwingMechanism.compressionTime, 100); // Cap the force to a max value
-      const force = throwingMechanism.compressionTime * throwingMechanism.stiffness; 
-      console.log(`The force value is ${force}`);
-      // Apply force to the ball that's on the mechanism
-      ballsArray.forEach(ball => {
-        if (ball.onThrowingMechanism) {
-          ball.speedY = -force / ball.mass; // Launch the ball upwards with the calculated force  
-          console.log(`The ball speed Y is ${ball.speedY}`);
-          ball.speedX = 0;    // Reset the horizontal velocity if you want the ball to only move upwards
-          ball.onThrowingMechanism = false; // The ball is no longer on the mechanism
-        }
-      });
-  
-       throwingMechanism.compressionTime = 0; // Reset the compression time
-
-    }
-
-    throwingMechanism.height += 15;
-    throwingMechanism.y -= 15;
-    // Ensure that the mechanism does not extend beyond its original size
-    if (throwingMechanism.height > 100) {
-      throwingMechanism.height = 100;
-    }
-    if (throwingMechanism.y < H - 120) {
-      throwingMechanism.y = H - 120;
-    }
+// If the down arrow key is pressed, increase the compression of the throwing mechanism
+if (downKeyIsPressed) {
+  // Make sure the height doesn't go below a certain threshold
+  if (throwingMechanism.height > 16) {
+    throwingMechanism.height -= 1;
+    throwingMechanism.y += 1;
+    // Increase the compression time more significantly
+    throwingMechanism.compressionTime += 1; // Adjust this value as needed
   }
+} else {
+  // Launch the ball if there's compression time accumulated
+  if (throwingMechanism.compressionTime > 0) {
+    // Calculate the force based on the compression time and stiffness
+    const force = throwingMechanism.compressionTime * throwingMechanism.stiffness;
+    
+    // Apply force to the ball that's on the mechanism
+    ballsArray.forEach(ball => {
+      if (ball.onThrowingMechanism) {
+        // Calculate the acceleration (force divided by mass)
+        // Remember, force is mass times acceleration, so acceleration is force divided by mass
+        const acceleration = force / ball.mass;
+        
+        // Launch the ball upwards with the calculated acceleration
+        // The negative sign is because we want to move the ball in the opposite direction of gravity (upwards)
+        ball.speedY = -acceleration; 
+        ball.onThrowingMechanism = false; // The ball is no longer on the mechanism
+      }
+    });
+    
+    // Reset the compression time after the ball is launched
+    throwingMechanism.compressionTime = 0;
+  }
+
+  // Reset the height of the throwing mechanism
+  throwingMechanism.height += 15;
+  throwingMechanism.y -= 15;
+  // Ensure that the mechanism does not extend beyond its original size
+  if (throwingMechanism.height > 100) {
+    throwingMechanism.height = 100;
+  }
+  if (throwingMechanism.y < H - 120) {
+    throwingMechanism.y = H - 120;
+  }
+}
 
 
 
