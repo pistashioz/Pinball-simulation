@@ -119,7 +119,7 @@ function createBall() {
   const speedY = 5; // Always start with the same upward speed
   // const newBall = new Ball(W / 2, 40, 10, speedX, speedY);
   // Place the second ball above the throwing mechanism
-  const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 100, 10, 0, speedY, 'steel');
+  const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 100, 10, 0, speedY, 'wood');
   ballsArray.push(newBall);
 }
 
@@ -321,7 +321,7 @@ function update() {
 
   // Update and draw each ball
   ballsArray.forEach(ball => {
-    if (!ball.onThrowingMechanism && !ball.inPlay) {
+    if (!ball.onThrowingMechanism) {
       // Apply gravity if the ball is not on the arc
       ball.speedY += GRAVITY;
 
@@ -339,8 +339,8 @@ function update() {
         if (tangentVelocityMagnitude < MIN_VELOCITY_THRESHOLD) {
           // Not enough velocity to complete the arc
           // Reverse the direction and simulate the ball falling back down
-          ball.speedX = -ball.speedX * 0.5; // Reverse X velocity and apply some damping
-          ball.speedY = -ball.speedY * 0.5; // Reverse Y velocity and apply some damping
+          ball.speedX = -ball.speedX * 0.50; // Reverse X velocity and apply some damping
+          ball.speedY = -ball.speedY * 0.50; // Reverse Y velocity and apply some damping
         } else {
           // Move the ball along the arc using the tangential velocity
           ball.x += ball.speedX;
@@ -355,18 +355,14 @@ function update() {
           }
         }
 
-        // Check if ball has passed the end of the arc and is now in play
-        console.log(ballAngle);
-        if (ballAngle <= arcEndAngle) {
-          console.log('ball has passed the end of the arc');
-          ball.inPlay = true;
-        }
-      } else {
+      } else if (ballAngle <= arcEndAngle) {
+        console.log('ball has passed the end of the arc');
+        ball.inPlay = true;
+      }
+      else {
         // Normal motion if the ball is not on the arc path
         ball.x += ball.speedX;
-        ball.y += ball.speedY;
-
-        
+        ball.y += ball.speedY;      
       }
     } else if (ball.onThrowingMechanism) {
       // Make the ball follow the mechanism if it is on it
