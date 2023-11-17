@@ -2,7 +2,6 @@
 // get the canvas and context
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-let b = new Array(); // balls (array of objects)
 const W = canvas.width, H = canvas.height;
 let isMouseDown = false;
 let focused = { state: false, key: null };
@@ -13,6 +12,7 @@ const bounceSound = new Audio("assets/audio/jump.wav");
 const bounceFlippers = new Audio("assets/audio/jumpFlipper.wav")
 const grabObstacles = new Audio('assets/Audio/grab.wav')
 
+//Classes 
 class Flipper {
   constructor(x, y, width, height, angularSpeed, maxAngle, imagePath) {
     this.x = x;
@@ -44,22 +44,13 @@ class Ball {
     this.radius = radius;
     this.speedX = speedX;
     this.speedY = speedY;
-    //this.bounce = 0.7; //  Bounce factor rubber ball (RUBBER BALL)
-    this.gravity = 0.5; // Gravity factor rubber ball (RUBBER BALL)7
-    this.friction = 0.98; //FOR WOODEN BALL IS 0.95
-    this.restitution = 0.2; //FOR WOODEN IS 0.8
   }
-
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fillStyle = "#255f85"; // Blue color
     ctx.fill();
     ctx.closePath();
-  }
-  applyFriction() {
-    this.speedX *= this.friction;
-    this.speedY *= this.friction;
   }
 }
 class Obstacle {
@@ -73,12 +64,14 @@ class Obstacle {
   }
 
   draw() {
+    //Bigger circle
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
     ctx.fillStyle = this.color; // Green color
     ctx.fill();
     ctx.closePath();
 
+    //Smaller circle
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r / 3, 0, 2 * Math.PI);
     ctx.fillStyle = "#FFFFFF"; // Green color
@@ -88,10 +81,13 @@ class Obstacle {
     
   }
 
+  //shake effect in obstacles
   shake() {
     if (this.shakeFrames > 0) {
+      // update  x and y coordinates with random values within a specified range
       this.x += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
       this.y += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
+      // decrease the number of remaining shake frames
       this.shakeFrames--;
     }
   }
@@ -99,6 +95,7 @@ class Obstacle {
 const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50, 10, 30, 'assets/img/leftFlipper.svg');
 const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'assets/img/rightFlipper.svg');
 const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
+//Array with obstacles' values
 const obstacles = [
   new Obstacle(W / 2, H / 2 - 50, 25, 'red'),
   new Obstacle(W / 2 + 100, H / 2 - 150, 25, 'blue'),
@@ -107,20 +104,23 @@ const obstacles = [
   new Obstacle(W / 2 - 100, H / 2 + 50, 25,'yellow'),
 ];
 
-
+//Function to check for collision between the ball and an obstacle
 function checkBallObstacleCollision(ball, obstacle) {
-
+  //calculate the distance between the center of the ball and the center of the obstacle
   const dx = ball.x - obstacle.x;
   const dy = ball.y - obstacle.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
 
+  //check if the distance is less than the sum of the ball and obstacle radius 
   if (distance < ball.radius + obstacle.r) {
-    // Collision detected
+    // Collision detected so we play a bounce sound
     bounceSound.play();
+    //trigger a shaking effect on the obstacle
     obstacle.shakeFrames = 10;
+    //the collision ocurred
     return true;
   }
-
+  //in case no collision was detected
   return false;
 }
 function draw(){
@@ -128,31 +128,37 @@ function draw(){
       ctx.clearRect(0, 0, W, H);
       leftFlipper.draw();
       rightFlipper.draw();
+      //draw each obstacle in obstacles array
       for (const obstacle of obstacles) {
         obstacle.draw();
       }
 }
 
 function move(e) {
+  //check if mouse btn is not pressed
   if (!isMouseDown) {
     return;
   }
   getMousePosition(e);
 
+  //check if an obstacle is focused for movement
   if (focused.state) {
+    //update the focused obstacle's position to the mouse position
     obstacles[focused.key].x = mousePosition.x;
     obstacles[focused.key].y = mousePosition.y;
 
     draw();
     return;
   }
-
+  //if no obstacle is focused
   for (var i = 0; i < obstacles.length; i++) {
+    //check if mouse intersects with an obstacle
     if (intersects(obstacles[i])) {
+      //play audio if intersection is detected and change focused state to true so we can store the index of the focused obstacle
       grabObstacles.play()
       focused.state = true;
       focused.key = i;
-      
+      //increase the size of the current obstacle to be perceived as we grabbed it
       obstacles[i].r = 35;
       break;
     }
@@ -163,17 +169,18 @@ function move(e) {
 
 
 function setDraggable(e) {
-  var t = e.type;
-  if (t === "mousedown") {
+  let type = e.type;
+  if (type === "mousedown") {
     isMouseDown = true;
-  } else if (t === "mouseup") {
+  } else if (type === "mouseup") {
     
-    for (var i = 0; i < obstacles.length; i++) {
+    for (let i = 0; i < obstacles.length; i++) {
       if (intersects(obstacles[i])) {
-
+        //change to obstacle's normal size after being dragged
         obstacles[i].r = 25;
       }
     }
+    //indicates the mouse button is released
     isMouseDown = false;
     releaseFocus();
   }
@@ -186,6 +193,7 @@ function releaseFocus(){
 
 function getMousePosition(e){
   var rect = canvas.getBoundingClientRect();
+  //calculate mouse position relative to the canvas
   mousePosition = {
     x: Math.round(e.x - rect.left),
     y: Math.round(e.y - rect.top)
@@ -209,8 +217,6 @@ function update() {
     ball.x += ball.speedX;
     ball.y += ball.speedY;
 
-    // Apply gravity
-    // ball.speedY += ball.gravity;
 
     // Ball collisions with the canvas boundaries
     if (ball.x < ball.radius || ball.x > canvas.width - ball.radius) {
