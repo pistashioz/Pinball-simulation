@@ -9,9 +9,8 @@ let pause = false
 
 //sound effects
 const bounceSound = new Audio("assets/audio/jump.wav");
-var bounceFlippers = new Audio("assets/audio/jumpFlipper.wav")
-
-
+const bounceFlippers = new Audio("assets/audio/jumpFlipper.wav")
+const grabObstacles = new Audio('assets/Audio/grab.wav')
 
 class Flipper {
   constructor(x, y, width, height, angularSpeed, maxAngle, imagePath) {
@@ -149,8 +148,10 @@ function move(e) {
 
   for (var i = 0; i < obstacles.length; i++) {
     if (intersects(obstacles[i])) {
+      grabObstacles.play()
       focused.state = true;
       focused.key = i;
+      
       obstacles[i].r = 35;
       break;
     }
@@ -165,8 +166,10 @@ function setDraggable(e) {
   if (t === "mousedown") {
     isMouseDown = true;
   } else if (t === "mouseup") {
+    
     for (var i = 0; i < obstacles.length; i++) {
       if (intersects(obstacles[i])) {
+
         obstacles[i].r = 25;
       }
     }
