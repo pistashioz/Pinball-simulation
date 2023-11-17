@@ -7,6 +7,12 @@ let isMouseDown = false;
 let focused = { state: false, key: null };
 let pause = false
 
+//sound effects
+const bounceSound = new Audio("assets/audio/jump.wav");
+var bounceFlippers = new Audio("assets/audio/jumpFlipper.wav")
+
+
+
 class Flipper {
   constructor(x, y, width, height, angularSpeed, maxAngle, imagePath) {
     this.x = x;
@@ -90,8 +96,8 @@ class Obstacle {
     }
   }
 }
-const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50, 10, 30, 'src/leftFlipper.svg');
-const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'src/rightFlipper.svg');
+const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50, 10, 30, 'assets/img/leftFlipper.svg');
+const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'assets/img/rightFlipper.svg');
 const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
 const obstacles = [
   new Obstacle(W / 2, H / 2 - 50, 25, 'red'),
@@ -110,6 +116,7 @@ function checkBallObstacleCollision(ball, obstacle) {
 
   if (distance < ball.radius + obstacle.r) {
     // Collision detected
+    bounceSound.play();
     obstacle.shakeFrames = 10;
     return true;
   }
@@ -203,10 +210,12 @@ function update() {
 
     // Ball collisions with the canvas boundaries
     if (ball.x < ball.radius || ball.x > canvas.width - ball.radius) {
+      
       ball.speedX *= -1;
     }
 
     if (ball.y < ball.radius) {
+    
       ball.speedY *= -1;
     }
 
@@ -217,6 +226,7 @@ function update() {
       ball.y > leftFlipper.y - ball.radius - leftFlipper.height / 2 &&
       ball.y < leftFlipper.y + ball.radius + leftFlipper.height / 2
     ) {
+      bounceFlippers.play();
       ball.speedY *= -1; // Reverse vertical direction
     }
 
@@ -227,12 +237,14 @@ function update() {
       ball.y > rightFlipper.y - ball.radius - rightFlipper.height / 2 &&
       ball.y < rightFlipper.y + ball.radius + rightFlipper.height / 2
     ) {
+      bounceFlippers.play()
       ball.speedY *= -1; // Reverse vertical direction
     }
 
     for (const obstacle of obstacles) {
       obstacle.shake();
       if (checkBallObstacleCollision(ball, obstacle)) {
+        
         // Reverse ball direction and apply shake effect on obstacle
         ball.speedY *= -1; // Reverse vertical direction
         //cambiar la posicion frame por frame
