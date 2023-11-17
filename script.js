@@ -8,7 +8,7 @@ let focused = { state: false, key: null };
 let pause = false
 
 class Flipper {
-  constructor(x, y, width, height, angularSpeed, maxAngle) {
+  constructor(x, y, width, height, angularSpeed, maxAngle, imagePath) {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -16,6 +16,8 @@ class Flipper {
     this.angle = 0; //current angle
     this.angularSpeed = angularSpeed; //flipper speed
     this.maxAngle = maxAngle; //maximum rotation angle
+    this.image = new Image();
+    this.image.src = imagePath;
   }
 
   draw() {
@@ -23,8 +25,8 @@ class Flipper {
     ctx.translate(this.x - this.width / 2, this.y - this.height / 2);
     this.angle = Math.min(Math.max(-this.maxAngle, this.angle), this.maxAngle);
     ctx.rotate(-Math.PI / 180 * this.angle);
-    ctx.fillStyle = "#90BE6D"; // Green color
-    ctx.fillRect(0, 0, this.width, this.height);
+    ctx.drawImage(this.image, 0, 0, this.width, this.height);// Green color
+
     ctx.restore();
   }
 }
@@ -54,12 +56,12 @@ class Ball {
     this.speedY *= this.friction;
   }
 }
-
 class Obstacle {
-  constructor(x, y, r) {
+  constructor(x, y, r, color) {
     this.x = x;
     this.y = y;
     this.r = r;
+    this.color = color
     this.shakeFrames = 5;
     this.shakeMagnitude = 5; // Adjust the magnitude of the shake
   }
@@ -67,9 +69,17 @@ class Obstacle {
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
-    ctx.fillStyle = "#ffc857"; // Green color
+    ctx.fillStyle = this.color; // Green color
     ctx.fill();
     ctx.closePath();
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r / 3, 0, 2 * Math.PI);
+    ctx.fillStyle = "#FFFFFF"; // Green color
+    ctx.fill();
+    ctx.closePath();
+
+    
   }
 
   shake() {
@@ -80,19 +90,20 @@ class Obstacle {
     }
   }
 }
-
-const leftFlipper = new Flipper(canvas.width * 0.37, canvas.height - 80, 100, 10, 10, 30);
-const rightFlipper = new Flipper(canvas.width * 0.62, canvas.height - 80, -100, -10, 10, 30);
+const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50, 10, 30, 'src/leftFlipper.svg');
+const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'src/rightFlipper.svg');
 const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
 const obstacles = [
-  new Obstacle(W / 2, H / 2 - 50, 15),
-  new Obstacle(W / 2 + 100, H / 2 - 150, 15),
-  new Obstacle(W / 2 - 100, H / 2 - 150, 15),
-  new Obstacle(W / 2 + 100, H / 2 + 50, 15),
-  new Obstacle(W / 2 - 100, H / 2 + 50, 15),
+  new Obstacle(W / 2, H / 2 - 50, 25, 'red'),
+  new Obstacle(W / 2 + 100, H / 2 - 150, 25, 'blue'),
+  new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
+  new Obstacle(W / 2 + 100, H / 2 + 50, 25, 'purple'),
+  new Obstacle(W / 2 - 100, H / 2 + 50, 25,'yellow'),
 ];
 
+
 function checkBallObstacleCollision(ball, obstacle) {
+
   const dx = ball.x - obstacle.x;
   const dy = ball.y - obstacle.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
@@ -124,6 +135,7 @@ function move(e) {
   if (focused.state) {
     obstacles[focused.key].x = mousePosition.x;
     obstacles[focused.key].y = mousePosition.y;
+
     draw();
     return;
   }
@@ -132,7 +144,7 @@ function move(e) {
     if (intersects(obstacles[i])) {
       focused.state = true;
       focused.key = i;
-      obstacles[i].r = 20;
+      obstacles[i].r = 35;
       break;
     }
   }
@@ -148,7 +160,7 @@ function setDraggable(e) {
   } else if (t === "mouseup") {
     for (var i = 0; i < obstacles.length; i++) {
       if (intersects(obstacles[i])) {
-        obstacles[i].r = 15;
+        obstacles[i].r = 25;
       }
     }
     isMouseDown = false;
