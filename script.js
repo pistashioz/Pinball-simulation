@@ -8,6 +8,9 @@ const H = canvas.height;
 const GRAVITY = 0.75;
 const BOUNCE_THRESHOLD = 2.5; // Minimum speed for bounce
 
+let isMouseDown = false;
+let focused = { state: false, key: null };
+let pause = false;
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
@@ -15,9 +18,14 @@ let downKeyIsPressed = false;
 
 let ballsArray = []; // Array to store all the balls
 
+//sound effects
+const BOUNCE_SOUND = new Audio("assets/audio/Jump.wav");
+const BOUNCE_FLIPPERS = new Audio("assets/audio/jumpFlipper.wav");
+const GRAB_OBSTACLES = new Audio("assets/audio/grab.wav");
+
 // Class defining a flipper
 class Flipper {
-  constructor(x, y, width, height, angularSpeed, maxAngle) {
+  constructor(x, y, width, height, angularSpeed, maxAngle, imagePath) {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -25,16 +33,21 @@ class Flipper {
     this.angle = 0; // Current angle
     this.angularSpeed = angularSpeed; // Flipper speed
     this.maxAngle = maxAngle; // Maximum rotation angle
+    this.image = new Image();
+    this.image.src = imagePath;
   }
 
   // Method to draw flipper on canvas
   draw() {
     ctx.save();
+
     ctx.translate(this.x, this.y);
     this.angle = Math.min(Math.max(-this.maxAngle, this.angle), this.maxAngle);
     ctx.rotate(-Math.PI / 180 * this.angle);
     ctx.fillStyle = "#ff0000";
-    ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+    ctx.drawImage(this.image, 0,0, this.width, this.height);
+    //ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+
     ctx.restore();
   }
 }
@@ -73,7 +86,7 @@ class Ball {
     this.speedY = speedY;
     this.material = material;
     this.onThrowingMechanism = false;
-    this.inPlay = true;
+    //this.inPlay = true;
     this.setPhysicalProperties(material);
   }
   
@@ -107,11 +120,167 @@ class Ball {
   }
 }
 
+class Obstacle {
+  constructor(x, y, r, color) {
+    this.x = x;
+    this.y = y;
+    this.r = r;
+    this.color = color
+    this.shakeFrames = 5;
+    this.shakeMagnitude = 5; // Adjust the magnitude of the shake
+  }
+
+  draw() {
+    //Bigger circle
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+    ctx.fillStyle = this.color; // Green color
+    ctx.fill();
+    ctx.closePath();
+
+    //Smaller circle
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r / 3, 0, 2 * Math.PI);
+    ctx.fillStyle = "#FFFFFF"; // Green color
+    ctx.fill();
+    ctx.closePath();
+
+    
+  }
+
+  //shake effect in obstacles
+  shake() {
+    if (this.shakeFrames > 0) {
+      // update  x and y coordinates with random values within a specified range
+      this.x += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
+      this.y += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
+      // decrease the number of remaining shake frames
+      this.shakeFrames--;
+    }
+  }
+}
+
 // Instantiating the flippers
-const leftFlipper = new Flipper(W * 0.33, H - 80, 65, 10, 10, 30);
-const rightFlipper = new Flipper(W * 0.57, H - 80, -65, -10, 10, 30);
+const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50, 10, 30, 'assets/img/leftFlipper.svg');
+const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'assets/img/rightFlipper.svg');
+
 const throwingMechanism = new ThrowingMechanism(W - 57, H - 120, 20, 100);
 
+
+//Array with obstacles' values
+const obstacles = [
+  new Obstacle(W / 2, H / 2 - 50, 25, 'red'),
+  new Obstacle(W / 2 + 100, H / 2 - 150, 25, 'blue'),
+  new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
+  new Obstacle(W / 2 + 100, H / 2 + 50, 25, 'purple'),
+  new Obstacle(W / 2 - 100, H / 2 + 50, 25,'yellow'),
+];
+
+//Function to check for collision between the ball and an obstacle
+function checkBallObstacleCollision(ball, obstacle) {
+  //calculate the distance between the center of the ball and the center of the obstacle
+  const dx = ball.x - obstacle.x;
+  const dy = ball.y - obstacle.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  //check if the distance is less than the sum of the ball and obstacle radius 
+  if (distance < ball.radius + obstacle.r) {
+    // Collision detected so we play a bounce sound
+    BOUNCE_SOUND.play();
+    //trigger a shaking effect on the obstacle
+    obstacle.shakeFrames = 10;
+    //the collision ocurred
+    return true;
+  }
+  //in case no collision was detected
+  return false;
+}
+function draw(){
+      //clear canvas
+      ctx.clearRect(0, 0, W, H);
+      leftFlipper.draw();
+      rightFlipper.draw();
+      //draw each obstacle in obstacles array
+      for (const obstacle of obstacles) {
+        obstacle.draw();
+      }
+}
+
+function move(e) {
+  //check if mouse btn is not pressed
+  if (!isMouseDown) {
+    return;
+  }
+  getMousePosition(e);
+
+  //check if an obstacle is focused for movement
+  if (focused.state) {
+    //update the focused obstacle's position to the mouse position
+    obstacles[focused.key].x = mousePosition.x;
+    obstacles[focused.key].y = mousePosition.y;
+
+    draw();
+    return;
+  }
+  //if no obstacle is focused
+  for (var i = 0; i < obstacles.length; i++) {
+    //check if mouse intersects with an obstacle
+    if (intersects(obstacles[i])) {
+      //play audio if intersection is detected and change focused state to true so we can store the index of the focused obstacle
+      GRAB_OBSTACLES.play()
+      focused.state = true;
+      focused.key = i;
+      //increase the size of the current obstacle to be perceived as we grabbed it
+      obstacles[i].r = 35;
+      break;
+    }
+  }
+
+  draw();
+}
+
+
+function setDraggable(e) {
+  let type = e.type;
+  if (type === "mousedown") {
+    isMouseDown = true;
+  } else if (type === "mouseup") {
+    
+    for (let i = 0; i < obstacles.length; i++) {
+      if (intersects(obstacles[i])) {
+        //change to obstacle's normal size after being dragged
+        obstacles[i].r = 25;
+      }
+    }
+    //indicates the mouse button is released
+    isMouseDown = false;
+    releaseFocus();
+  }
+}
+
+
+function releaseFocus(){
+  focused.state = false
+}
+
+function getMousePosition(e){
+  var rect = canvas.getBoundingClientRect();
+  //calculate mouse position relative to the canvas
+  mousePosition = {
+    x: Math.round(e.x - rect.left),
+    y: Math.round(e.y - rect.top)
+  }
+}
+function intersects(obstacle) {
+  // subtract the x, y coordinates from the mouse position to get coordinates 
+  // for the hotspot location and check against the area of the radius
+  var areaX = mousePosition.x - obstacle.x;
+  var areaY = mousePosition.y - obstacle.y;
+  //return true if x^2 + y^2 <= radius squared.
+  return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
+}
+
+draw();
 
 // Function to create a new ball and add it to the balls array
 function createBall() {
@@ -231,6 +400,7 @@ function handleCollisions() {
 
 
   ballsArray.forEach((ball, index) => {
+    if (!pause) {
     // Ball collision with the top of the throwing mechanism
     if (ball.x >= throwingMechanism.x &&
         ball.x <= throwingMechanism.x + throwingMechanism.width &&
@@ -277,7 +447,7 @@ function handleCollisions() {
       (ball.x + ball.radius > W - borderWidth - throwingMechWidth && ball.speedX > 0)) {
       ball.speedX *= -1;
     }
-
+  
     // Calculate flipper edges based on current angle
     /*const flipperEdgeX = flipper.x + Math.cos(flipper.angle * Math.PI / 180) * flipper.width / 2;
     const flipperEdgeY = flipper.y + Math.sin(flipper.angle * Math.PI / 180) * flipper.height / 2;*/
@@ -297,7 +467,20 @@ function handleCollisions() {
       ball.y < rightFlipper.y + rightFlipper.height / 2 + ball.radius) {
       ball.speedY *= -1; // Reflect the ball vertically
     }
+
+    for (const obstacle of obstacles) {
+      obstacle.shake();
+      if (checkBallObstacleCollision(ball, obstacle)) {
+
+        // Reverse ball direction and apply shake effect on obstacle
+        ball.speedY *= -1; // Reverse vertical direction
+        //cambiar la posicion frame por frame
+      }
+    }
+  }
   });
+
+  
 }
 
 // The update function, called once per frame
@@ -449,7 +632,8 @@ if (downKeyIsPressed) {
   // Draw flippers after the balls
   leftFlipper.draw();
   rightFlipper.draw();
-
+  // Draw the obstacles
+  obstacles.forEach(obstacle => obstacle.draw());
 
   // Request the next frame
   requestAnimationFrame(update);
@@ -473,6 +657,11 @@ window.onload = () => {
         console.log('ArrowDown pressed');
       } 
     }
+    // if the event key is the space bar
+    else if (event.key === " ") {
+      pause = !pause
+      event.preventDefault()
+    }
   });
   document.addEventListener("keyup", (event) => {
     if (event.key === "ArrowLeft") {
@@ -483,7 +672,9 @@ window.onload = () => {
       downKeyIsPressed = false;
     };
   });
-
+  canvas.addEventListener("mousedown", setDraggable);
+  canvas.addEventListener("mousemove", move);
+  canvas.addEventListener("mouseup", setDraggable);
 
   createBall();  // Start the game with one ball
   update();
