@@ -7,6 +7,10 @@ const W = canvas.width;
 const H = canvas.height;
 const GRAVITY = 0.75;
 const BOUNCE_THRESHOLD = 2.5; // Minimum speed for bounce
+//sound effects
+const BOUNCE_SOUND = new Audio("assets/audio/Jump.wav");
+const BOUNCE_FLIPPERS = new Audio("assets/audio/jumpFlipper.wav");
+const GRAB_OBSTACLES = new Audio("assets/audio/grab.wav");
 
 let isMouseDown = false;
 let focused = { state: false, key: null };
@@ -18,40 +22,66 @@ let downKeyIsPressed = false;
 
 let ballsArray = []; // Array to store all the balls
 
-//sound effects
-const BOUNCE_SOUND = new Audio("assets/audio/Jump.wav");
-const BOUNCE_FLIPPERS = new Audio("assets/audio/jumpFlipper.wav");
-const GRAB_OBSTACLES = new Audio("assets/audio/grab.wav");
 
 // Class defining a flipper
 class Flipper {
-  constructor(x, y, width, height, angularSpeed, maxAngle, imagePath) {
+  constructor(x, y, length, width, angularSpeed, maxAngle) {
     this.x = x;
     this.y = y;
+    this.length = length;
     this.width = width;
-    this.height = height;
+    this.angularSpeed = angularSpeed;
     this.angle = 0; // Current angle
-    this.angularSpeed = angularSpeed; // Flipper speed
     this.maxAngle = maxAngle; // Maximum rotation angle
-    this.image = new Image();
-    this.image.src = imagePath;
   }
 
   // Method to draw flipper on canvas
   draw() {
+    // Save the current context state
     ctx.save();
 
+    // Translate and rotate the context to the flipper's pivot position and angle
     ctx.translate(this.x, this.y);
     this.angle = Math.min(Math.max(-this.maxAngle, this.angle), this.maxAngle);
-    ctx.rotate(-Math.PI / 180 * this.angle);
-    ctx.fillStyle = "#ff0000";
-    ctx.drawImage(this.image, 0,0, this.width, this.height);
-    //ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+    ctx.rotate(this.angle * Math.PI / 180);
 
+    // Start drawing the flipper shape
+    ctx.beginPath();
+
+    // Draw the rounded end of the flipper
+    // Starts from the right side of the flipper, drawing half a circle counter-clockwise
+    ctx.arc(0, 0, this.width / 3, Math.PI * 0.5, Math.PI * 1.5, true);
+
+    // Draw the bottom side of the flipper
+    
+    ctx.arc(this.length, 0, this.width / 2, Math.PI * 1.5, Math.PI * 0.5, true);
+    // Close the path to create a rounded rectangle shape
+    ctx.closePath();
+
+    // Fill the flipper with pink color
+    ctx.fillStyle = 'pink';
+    ctx.fill();
+
+    // Stroke the flipper border with black color
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Now draw a full circle for the pivot point of the flipper
+    ctx.beginPath();
+    ctx.arc(0, 0, this.width / 5, 0, Math.PI * 2);
+
+    // Fill the circle with white color
+    ctx.fillStyle = 'white';
+    ctx.fill();
+
+    // Stroke the circle border with black color
+    ctx.stroke();
+
+    // Restore the context to its original state
     ctx.restore();
   }
 }
-
 // Class for the throwing mechanism
 class ThrowingMechanism {
   constructor(x, y, width, height, stiffness = 0.3) { // Default stiffness value
@@ -161,8 +191,8 @@ class Obstacle {
 }
 
 // Instantiating the flippers
-const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50, 10, 30, 'assets/img/leftFlipper.svg');
-const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'assets/img/rightFlipper.svg');
+//const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 20, 20, 30);
+const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 90, -50, 20, 20, 30);
 
 const throwingMechanism = new ThrowingMechanism(W - 57, H - 120, 20, 100);
 
@@ -198,8 +228,7 @@ function checkBallObstacleCollision(ball, obstacle) {
 function draw(){
       //clear canvas
       ctx.clearRect(0, 0, W, H);
-      leftFlipper.draw();
-      rightFlipper.draw();
+
       //draw each obstacle in obstacles array
       for (const obstacle of obstacles) {
         obstacle.draw();
@@ -453,12 +482,12 @@ function handleCollisions() {
     const flipperEdgeY = flipper.y + Math.sin(flipper.angle * Math.PI / 180) * flipper.height / 2;*/
 
     // Left flipper collision
-    if (ball.x > leftFlipper.x - leftFlipper.width / 2 - ball.radius &&
+    /*if (ball.x > leftFlipper.x - leftFlipper.width / 2 - ball.radius &&
       ball.x < leftFlipper.x + leftFlipper.width / 2 + ball.radius &&
       ball.y > leftFlipper.y - leftFlipper.height / 2 - ball.radius &&
       ball.y < leftFlipper.y + leftFlipper.height / 2 + ball.radius) {
       ball.speedY *= -1; // Reflect the ball vertically
-    }
+    }*/
 
     // Right flipper collision
     if (ball.x > rightFlipper.x - rightFlipper.width / 2 - ball.radius &&
@@ -482,6 +511,50 @@ function handleCollisions() {
 
   
 }
+
+function drawFlipper(ctx, x, y, length, width, angle) {
+  // Save the current context state
+  ctx.save();
+
+  /*// Move to the flipper's location
+  ctx.translate(x, y);
+  
+  // Rotate the flipper to the specified angle
+  ctx.rotate(angle * Math.PI / 180);*/
+
+  // Start the path for the flipper
+  ctx.beginPath();
+
+  //Draw half a circle
+  ctx.arc(100, 100, width / 2, 1.5,  -1.5);
+  
+  ctx.arc(160, 100, width / 3, -1.5,  1.5);
+  ctx.closePath();
+  // Set properties for the flipper
+  ctx.fillStyle = 'pink'; // Set the fill color to black
+  ctx.fill(); // Fill the flipper shape
+  ctx.strokeStyle = 'black'; // Set the stroke color to white
+  ctx.lineWidth = 2; // Set the line width for the stroke
+  ctx.stroke(); // Stroke the flipper shape
+  //Now draw a full circle
+  ctx.beginPath();
+
+  ctx.arc(100, 100, width / 5, 0, 2 * Math.PI);
+
+  ctx.closePath();
+  // Set properties for the flipper
+  ctx.fillStyle = 'white'; // Set the fill color to black
+  ctx.fill(); // Fill the flipper shape
+  ctx.strokeStyle = 'black'; // Set the stroke color to white
+  ctx.lineWidth = 2; // Set the line width for the stroke
+  ctx.stroke(); // Stroke the flipper shape
+
+  // Restore the context to its original state
+  ctx.restore();
+}
+
+
+
 
 // The update function, called once per frame
 function update() {
@@ -559,6 +632,8 @@ function update() {
 
 
 
+// Draw a flipper at position (200, 200) with length 150, width 30, and rotated 45 degrees
+drawFlipper(ctx, 200, 200, 150, 30, 45);
 
   drawShadows();
 
@@ -570,11 +645,11 @@ function update() {
   handleCollisions();
 
   // Update flipper angles based on key presses
-  if (leftKeyIsPressed) {
+  /*if (leftKeyIsPressed) {
     leftFlipper.angle += leftFlipper.angularSpeed;
   } else {
     leftFlipper.angle -= leftFlipper.angularSpeed;
-  }
+  }*/
 
   if (rightKeyIsPressed) {
     rightFlipper.angle -= rightFlipper.angularSpeed;
@@ -630,7 +705,7 @@ if (downKeyIsPressed) {
 
 
   // Draw flippers after the balls
-  leftFlipper.draw();
+  //leftFlipper.draw();
   rightFlipper.draw();
   // Draw the obstacles
   obstacles.forEach(obstacle => obstacle.draw());
