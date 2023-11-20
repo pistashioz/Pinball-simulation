@@ -328,7 +328,8 @@ draw();
 function createBall() {
   const speedX = 0; // Random horizontal speed
   const speedY = 5; // Always start with the same upward speed
-  const newBall = new Ball(200, 100, 10, speedX, speedY, 'steel');
+  const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 120, 10, 0, speedY);
+  //const newBall = new Ball(200, 100, 10, speedX, speedY, 'steel');
   ballsArray.push(newBall);
 }
 
