@@ -116,9 +116,51 @@ class ThrowingMechanism {
 
     ctx.fillStyle = "green";
     ctx.beginPath();
-    ctx.rect(this.x, this.y, this.width, this.height);
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.width, this.y);
+    ctx.lineTo(this.x + this.width, this.y + 10);
+    //ctx.rect(this.x, this.y, this.width, this.height);
+    ctx.lineTo(this.x + 23, this.y+10)
+    ctx.lineTo(this.x + 23, this.y+100);
+    ctx.lineTo(this.x+13, this.y+100);
+    ctx.lineTo(this.x+13, this.y+10);
+    ctx.lineTo(this.x, this.y+10);
     ctx.fill();
+    ctx.stroke();
     ctx.closePath();
+
+    /*ctx.beginPath();
+  
+    ctx.ellipse(100, 100, 5, 15, Math.PI /2, 0,  Math.PI, true);
+    ctx.lineWidth=2;
+    ctx.stroke();
+    
+
+    ctx.beginPath();
+    ctx.ellipse(100, 110, 5, 15, Math.PI /2, 0,  Math.PI, false);
+
+    ctx.lineWidth=2;
+    ctx.stroke();*/
+    let value = 16;
+    //A loop to draw 10 ellipses on the canvas
+    for (let i = 0; i < 1; i++) {
+    
+      let clockwise = true;
+      if (i % 2 !== 0) {
+        clockwise = false
+      }
+
+      ctx.beginPath();
+      ctx.ellipse(this.x+18, this.y + value, 5, 15, Math.PI /2, 0.40,  3.5, clockwise);
+
+      ctx.lineWidth=2;
+      ctx.stroke();
+      ctx.closePath();
+
+      // Increment the value by 5 each time
+      value += 10;
+  
+    }
 
     ctx.restore();
   };
@@ -164,6 +206,7 @@ class Ball {
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fillStyle = "#00ff00"; // Green color for the ball
     ctx.fill();
+    ctx.stroke();
     ctx.closePath();
   }
 }
@@ -208,7 +251,7 @@ class Obstacle {
   }
 }
 
-const throwingMechanism = new ThrowingMechanism(W - 57, H - 120, 40, 100);
+const throwingMechanism = new ThrowingMechanism(W - 57, H - 120, 37, 100);
 
 //Array with obstacles' values
 const obstacles = [
@@ -404,8 +447,8 @@ function throwingMech() {
   ctx.fillStyle = 'green';
   
   ctx.beginPath();
-  ctx.moveTo(W - 75, H-20);
-  ctx.lineTo(W - 75, 150);
+  ctx.moveTo(W - 58, H-20);
+  ctx.lineTo(W - 58, 150);
   ctx.stroke();
   ctx.closePath();
 
@@ -418,7 +461,7 @@ function throwingMech() {
 
   // Draw the arc
   ctx.beginPath();
-  ctx.arc(W - 175, 150, radius, startAngle, endAngle, true);
+  ctx.arc(W - 158, 150, radius, startAngle, endAngle, true);
 
   ctx.stroke();
   ctx.restore();
@@ -522,12 +565,12 @@ function update() {
   ctx.fillRect(26, 20, W, H);
 
   ctx.beginPath();
-  ctx.arc(W - 149, 140, 100, 0, -1.6, true);
+  ctx.arc(W - 140, 140, 100, 0, -1.6, true);
   ctx.stroke();
   ctx.closePath();
 
   // Define the arc parameters
-  const arcCenterX = W - 149;
+  const arcCenterX = W - 140;
   const arcCenterY = 140;
   const arcRadius = 100;
   const arcStartAngle = 0; // Starting at the top of the circle
