@@ -119,16 +119,16 @@ class Obstacle {
     }
   }
 }
-const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50, 10, 30, 'assets/img/leftFlipper.svg');
-const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'assets/img/rightFlipper.svg');
+const leftFlipper = new Flipper(canvas.width * 0.35 + 350, canvas.height - 90, 120, 50, 10, 30, 'assets/img/leftFlipper.svg');
+const rightFlipper = new Flipper(canvas.width * 0.65 + 180, canvas.height - 95, -120, -50, 10, 30, 'assets/img/rightFlipper.svg');
 const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
 //Array with obstacles' values
 const obstacles = [
-  new Obstacle(W / 2, H / 2 - 50, 25, 'red'),
-  new Obstacle(W / 2 + 100, H / 2 - 150, 25, 'blue'),
-  new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
-  new Obstacle(W / 2 + 100, H / 2 + 50, 25, 'purple'),
-  new Obstacle(W / 2 - 100, H / 2 + 50, 25,'yellow'),
+  new Obstacle(W / 2 + 250, H / 2 - 50, 25, 'red'),
+  new Obstacle(W / 2 + 350, H / 2 - 150, 25, 'blue'),
+  new Obstacle(W / 2 + 150, H / 2 - 150, 25, 'green'),
+  new Obstacle(W / 2 + 350, H / 2 + 50, 25, 'purple'),
+  new Obstacle(W / 2 + 150, H / 2 + 50, 25,'yellow'),
 ];
 
 //Function to check for collision between the ball and an obstacle
@@ -241,6 +241,7 @@ function update() {
   if (!pause) {
     // Update the x and y ball coordinates
     ball.x += ball.speedX;
+    //add limits to the ball!! 
     ball.y += ball.speedY;
 
 
