@@ -1,16 +1,43 @@
+function myFunction() {
+  document.getElementById("myDropdown").classList.toggle("show");
+}
 
-// get the canvas and context
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function(event) {
+  if (!event.target.matches('.dropbtn')) {
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
+
+
+
+// get the pinball canvas and context
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const W = canvas.width, H = canvas.height;
 let isMouseDown = false;
 let focused = { state: false, key: null };
 let pause = false
+let obstaclesInCanvas = []
 
 //sound effects
 const bounceSound = new Audio("assets/audio/jump.wav");
 const bounceFlippers = new Audio("assets/audio/jumpFlipper.wav")
 const grabObstacles = new Audio('assets/Audio/grab.wav')
+
+
+//get the obstacles canvas and context
+const canvasObstacles = document.getElementById("canvasObstacles");
+const ctxObstacles = canvas.getContext("2d");
+const WObs = canvas.width, HObs = canvas.height;
+
 
 //Classes 
 class Flipper {
@@ -166,7 +193,6 @@ function move(e) {
 
   draw();
 }
-
 
 function setDraggable(e) {
   let type = e.type;
