@@ -11,6 +11,106 @@ let pause = false;
 let leftKeyIsPressed = false;
 let ballsArray = []; // Array to store all the balls
 
+
+// Class defining the invisible parts of a flipper for collision detection
+class InvisibleFlipper {
+  constructor(x, y, length, width, angle) {
+    this.x = x;
+    this.y = y;
+    this.length = length;
+    this.width = width;
+    this.angle = angle; // the current angle of the visible flipper
+
+    // Define the points of the trapezium relative to the flipper's pivot point
+    this.trapeziumPoints = [
+      { x: 0, y: 0 },
+      { x: this.length, y: 0 },
+      { x: this.length, y: -this.width / 3 },
+      { x: 0, y: -this.width / 2 }
+    ];
+  }
+
+  // Method to draw the trapezium for collision detection (for debugging)
+  drawTrapezium() {
+    ctx.save(); // Save the current context state
+    ctx.translate(this.x, this.y); // Set the origin to the flipper's pivot point
+    ctx.rotate(this.angle * Math.PI / 180); // Convert angle to radians and rotate
+    ctx.beginPath();
+    ctx.strokeStyle = 'pink';
+    ctx.lineWidth = 2;
+
+    // Draw the trapezium based on the relative points
+    this.trapeziumPoints.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
+    });
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore(); // Restore the context to its original state
+  }
+
+  // Method to update the trapezium's points based on the flipper's current angle
+  updateTrapezium(angle) {
+    this.angle = angle; // Update the angle to match the visible flipper
+    // Transform the trapezium points based on the new angle if needed
+  }
+
+  // Add collision detection methods here
+  // Method to detect collision with the upper line of the trapezium
+detectCollision(ball) {
+  // Convert the line segment and ball position to the same coordinate space
+  const lineStart = this.trapeziumPoints[3];
+  const lineEnd = this.trapeziumPoints[2];
+  const relativeBallPos = {
+    x: ball.x - this.x,
+    y: ball.y - this.y
+  };
+
+  // Rotate the ball position to align with the line segment
+  const angleRad = -this.angle * Math.PI / 180;
+  const rotatedBallPos = {
+    x: relativeBallPos.x * Math.cos(angleRad) - relativeBallPos.y * Math.sin(angleRad),
+    y: relativeBallPos.x * Math.sin(angleRad) + relativeBallPos.y * Math.cos(angleRad)
+  };
+
+  // Check if the ball is within the bounding box of the line segment
+  if (rotatedBallPos.x + ball.radius < lineStart.x || rotatedBallPos.x - ball.radius > lineEnd.x) {
+    return false; // No collision possible if the ball is outside the line segment bounds
+  }
+
+  // Calculate the distance from the ball to the line segment
+  const distToLine = Math.abs(rotatedBallPos.y - lineStart.y); // Since the line is horizontal after rotation, y is constant
+
+  // Check for collision (the ball is colliding if the distance to the line is less than its radius)
+  if (distToLine <= ball.radius) {
+    // Handle the collision
+    // Calculate the normal vector of the line
+    const lineAngle = Math.atan2(lineEnd.y - lineStart.y, lineEnd.x - lineStart.x);
+    const normal = { x: Math.sin(lineAngle), y: -Math.cos(lineAngle) };
+    console.log(normal);
+    // Reflect the ball's velocity vector off the line's normal vector
+    const dotProduct = ball.speedX * normal.x + ball.speedY * normal.y;
+    ball.speedX = ball.speedX - 2 * dotProduct * normal.x;
+    ball.speedY = ball.speedY - 2 * dotProduct * normal.y;
+
+    // Multiply by restitution to reduce the energy of the ball post-collision
+    ball.speedX *= ball.restitution;
+    ball.speedY *= ball.restitution;
+
+    // Reposition the ball slightly outside the collision point to prevent sticking
+    ball.x += normal.x * (ball.radius - distToLine + 1);
+    ball.y += normal.y * (ball.radius - distToLine + 1);
+
+    return true;
+  }
+
+  return false;
+}
+}
+
 // Class defining a flipper
 class Flipper {
   constructor(x, y, length, width, angularSpeed, maxAngle, side) {
@@ -28,9 +128,13 @@ class Flipper {
     if (this.side === 'left' && leftKeyIsPressed) {
       this.angle = Math.max(this.angle - this.angularSpeed, -this.maxAngle);
       console.log('Left Flipper Angle: ' + this.angle);
+      console.log(this.x,this.y);
     } else if (this.side === 'left') {
       this.angle = Math.min(this.angle + this.angularSpeed, 30);
     }
+
+      // Update the invisible flipper's trapezium
+    this.invisibleFlipper.updateTrapezium(this.angle);
   }
   // Method to draw flipper on canvas
   draw() {
@@ -55,11 +159,18 @@ class Flipper {
     ctx.fill();
     ctx.stroke();
     ctx.closePath();
-    ctx.restore(); // Restore the context to its original state
+     // Restore the context to its original state
+
+    ctx.restore();
+
+    // Drawing the invisible flipper's trapezium for debugging
+    this.invisibleFlipper.drawTrapezium();
   }
 }
 // Instantiating the flippers with a maximum angle they can rotate
 const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 60, 30, 5, 30, 'left');
+leftFlipper.invisibleFlipper = new InvisibleFlipper(leftFlipper.x, leftFlipper.y, leftFlipper.length, leftFlipper.width, leftFlipper.angle);
+
 // Class defining a ball
 class Ball {
   constructor(x, y, radius, speedX, speedY, material) {
@@ -112,31 +223,34 @@ function removeBall(index) {
   ballsArray.splice(index, 1);
   createBall();
 }
-// Function to handle all ball collisions
+
+
+
 function handleCollisions() {
   ballsArray.forEach((ball, index) => {
     if (!pause) {
-    // Update the position if the ball is not on the mechanism
-    if (!ball.onThrowingMechanism) {
-      ball.x += ball.speedX;
-      ball.y += ball.speedY;
+      // Update the position if the ball is not on the mechanism
+      if (!ball.onThrowingMechanism) {
+        ball.x += ball.speedX;
+        ball.y += ball.speedY;
+      }
+
+      // Bottom border collision
+      if (ball.y + ball.radius > H && ball.speedY > 0) {
+        // alert('You lost! Click OK to launch a new ball.');
+        removeBall(index);
+        return;
+      }
+
+      // Collision with the upper line of the trapezium
+      if (leftFlipper.invisibleFlipper.detectCollision(ball)) {
+        // Collision handling code here (if any additional handling is needed)
+        console.log('Collision detected with the upper line of the trapezium');
+      }
     }
-    // Bottom border collision
-    if (ball.y + ball.radius > H && ball.speedY > 0) {
-      // alert('You lost! Click OK to launch a new ball.');
-      removeBall(index);
-      return;
-    }
-    // Left flipper collision
-    if (ball.x > leftFlipper.x - leftFlipper.width / 2 - ball.radius &&
-      ball.x < leftFlipper.x + leftFlipper.width / 2 + ball.radius &&
-      ball.y > leftFlipper.y - leftFlipper.height / 2 - ball.radius &&
-      ball.y < leftFlipper.y + leftFlipper.height / 2 + ball.radius) {
-      ball.speedY *= -1; // Reflect the ball vertically
-    }
-  }
   });
 }
+
 // The update function, called once per frame
 function update() {
   ctx.clearRect(0, 0, W, H);
