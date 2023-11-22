@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
     <meta charset="UTF-8">
@@ -7,28 +6,129 @@
     <link rel="stylesheet" type="text/css" href="styles.css" />
 </head>
 
+<style>
+/* Styles for the canvas element */
+#canvas {
+    background-color: white;
+    padding-left: 20px;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes moveUpDown {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(180px); /* Adjust the value to control the movement distance */
+  }
+}
+
+.vertical-rectangle {
+  width: 50px; /* Width of the vertical rectangle */
+  height: 200px; /* Height of the vertical rectangle */
+  background-color: red;
+  position: absolute;
+  top: 70%;
+    left: -115%;
+    transform: translate(0, -70%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.horizontal-rectangle {
+  width: 100px; /* Width of the horizontal rectangle */
+  height: 20px; /* Height of the horizontal rectangle */
+  background-color: blue;
+  position: absolute;
+  animation: moveUpDown 4s linear infinite; /* Animation timing */
+}
+.scale {
+      position: absolute;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-left: 60px;
+      pointer-events: none; /* Ensures click events pass through to elements below */
+    }
+
+    .scale p {
+      width: 5px;
+      
+      text-align: right;
+      font-size: 30px;
+      margin: 0;
+    }
+
+
 <body>
-    
-    <div class = 'background'>
-        
-    </div>
-    <canvas id="canvas" width="1000" height="600"></canvas>
-    <!--
-    <div id = 'formGravity'>
-        <label for = 'gravity'>Gravity value</label>
-        <input type  = 'number' name = 'gravity' id= 'gravity'>
-        <input type = 'submit' value ='submit'>
-    </div>
-    <div class="dropdown">
-        <button onclick="myFunction()" class="dropbtn">Ball Material</button>
-        <div id="myDropdown" class="dropdown-content">
-          <a href="#">Steel</a>
-          <a href="#">Wood</a>
-          <a href="#">Rubber</a>
+    <canvas id="canvas" width="476" height="650"></canvas>
+    <div class="vertical-rectangle">
+        <div class="scale">
+            <!-- Dynamically generate scale numbers -->
+            <script>
+              for (let i = 0; i <= 5; i++) {
+                document.write('<p>' + i + '</p>');
+              }
+            </script>
         </div>
-    </div>
-    -->
-    <script src="script.js"></script>
+        <div class="horizontal-rectangle"></div>
+      </div>
+    <script src="script2.js"></script>
+    <script>
+// JavaScript to toggle animation play state and get scale number
+document.body.onkeydown = function(e) {
+  if (e.keyCode == 32) { // 32 is the keycode for the spacebar
+    const rectangle = document.querySelector('.horizontal-rectangle');
+    const style = window.getComputedStyle(rectangle);
+    const playState = style.getPropertyValue('animation-play-state') === 'paused' ? 'running' : 'paused';
+    rectangle.style.animationPlayState = playState;
+
+
+    if (playState === 'paused') {
+      // Calculate which number the blue rectangle is closest to when stopped
+      const rect = rectangle.getBoundingClientRect();
+      const scale = document.querySelector('.scale');
+      const scaleNumbers = scale.getElementsByTagName('p');
+      let closestValue = null;
+      let closestDist = Infinity;
+
+      // Find the closest scale number or half-integer
+      for (let i = 0; i < scaleNumbers.length; i++) {
+        const scaleRect = scaleNumbers[i].getBoundingClientRect();
+        console.log(scaleRect);
+        const dist = Math.abs(scaleRect.top + scaleRect.height / 2 - (rect.top + rect.height / 2));
+
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestValue = parseFloat(scaleNumbers[i].textContent);
+          
+          // Check if the blue rectangle is closer to the middle of two scale numbers
+          if (i < scaleNumbers.length - 1) {
+            const nextScaleRect = scaleNumbers[i + 1].getBoundingClientRect();
+            const middlePoint = (scaleRect.top + nextScaleRect.top) / 2;
+            if (rect.top + rect.height / 2 > middlePoint) {
+              closestValue += 0.5;
+            }
+          }
+        }
+      }
+
+      // Log the closest number or do something with it
+      console.log('Stopped at scale number: ' + closestValue);
+    }
+  }
+};
+
+      </script>
+      
 </body>
 </html>
-
