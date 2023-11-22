@@ -1,4 +1,28 @@
+
 // Accessing the canvas and context
+
+function myFunction() {
+  document.getElementById("myDropdown").classList.toggle("show");
+}
+
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function(event) {
+  if (!event.target.matches('.dropbtn')) {
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
+
+
+
+// get the pinball canvas and context
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
@@ -14,6 +38,7 @@ const GRAB_OBSTACLES = new Audio("assets/audio/grab.wav");
 
 let isMouseDown = false;
 let focused = { state: false, key: null };
+
 let pause = false;
 
 let leftKeyIsPressed = false;
@@ -22,10 +47,20 @@ let downKeyIsPressed = false;
 
 let ballsArray = []; // Array to store all the balls
 
+let obstaclesInCanvas = []
+
+
+
 
 
 
 // Class defining a flipper
+
+//get the obstacles canvas and context
+const canvasObstacles = document.getElementById("canvasObstacles");
+const ctxObstacles = canvas.getContext("2d");
+const WObs = canvas.width, HObs = canvas.height;
+
 class Flipper {
   constructor(x, y, length, width, angularSpeed, maxAngle, side) {
     this.x = x;
@@ -260,7 +295,7 @@ const obstacles = [
   new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
   new Obstacle(W / 2 + 100, H / 2 + 50, 25, 'purple'),
   new Obstacle(W / 2 - 100, H / 2 + 50, 25,'yellow'),
-];
+
 
 //Function to check for collision between the ball and an obstacle
 function checkBallObstacleCollision(ball, obstacle) {
@@ -324,7 +359,6 @@ function move(e) {
   draw();
 }
 
-
 function setDraggable(e) {
   let type = e.type;
   if (type === "mousedown") {
@@ -375,6 +409,13 @@ function createBall() {
   //const newBall = new Ball(200, 100, 10, speedX, speedY, 'steel');
   ballsArray.push(newBall);
 }
+
+  if (!pause) {
+    // Update the x and y ball coordinates
+    ball.x += ball.speedX;
+    //add limits to the ball!! 
+    ball.y += ball.speedY;
+
 
 // Function to remove a ball from the array and create a new one
 function removeBall(index) {
