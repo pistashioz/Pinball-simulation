@@ -5,7 +5,7 @@ const ctx = canvas.getContext("2d");
 // Global variables for easier access
 const W = canvas.width;
 const H = canvas.height;
-const GRAVITY = 0.75;
+const GRAVITY = 0.35;
 const BOUNCE_THRESHOLD = 2.5; // Minimum speed for bounce
 
 const MIDDLE_OFFSET =   W/2 +13;
@@ -220,40 +220,43 @@ class Obstacle {
     this.x = x;
     this.y = y;
     this.r = r;
-    this.color = color
-    this.shakeFrames = 0; // Initializing this at 0 so it does not shake on page load
-    this.shakeMagnitude = 5; // Adjust the magnitude of the shake
+    this.color = color;
+    this.shakeFrames = 0; // No shake initially
+    this.shakeMagnitude = 4; // Shake by 4 pixels/units
+    this.shakeDirection = { x: 0, y: 0 };
   }
 
   draw() {
-    //Bigger circle
+    // Use the original position plus any temporary shake offset
+    let drawX = this.originalX + this.shakeDirection.x;
+    let drawY = this.originalY + this.shakeDirection.y;
+
+    // Draw the larger circle
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
-    ctx.fillStyle = this.color; // Green color
+    ctx.arc(drawX, drawY, this.r, 0, 2 * Math.PI);
+    ctx.fillStyle = this.color;
     ctx.fill();
     ctx.closePath();
 
-    //Smaller circle
+    // Draw the smaller circle
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r / 3, 0, 2 * Math.PI);
-    ctx.fillStyle = "#FFFFFF"; // Green color
+    ctx.arc(drawX, drawY, this.r / 3, 0, 2 * Math.PI);
+    ctx.fillStyle = "#FFFFFF";
     ctx.fill();
     ctx.closePath();
-
-    
   }
 
-  //shake effect in obstacles
-  shake() {
+  shake(dx, dy) {
     if (this.shakeFrames > 0) {
-      // update  x and y coordinates with random values within a specified range
-      this.x += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
-      this.y += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
-      // decrease the number of remaining shake frames
+      //this.shakeDirection.x = dx * this.shakeMagnitude;
+      this.shakeDirection.y = dy * this.shakeMagnitude;
+      console.log(`shakeDirectionY: ${this.shakeDirection.y}, dy: ${dy}, this.shakeMagnitude: ${this.shakeMagnitude}`);
+      console.log(this.shakeDirection.y);
       this.shakeFrames--;
     } else {
-      this.x = this.originalX;  
-      this.y = this.originalY;
+      // Reset the shake direction after the effect is over
+      this.shakeDirection.x = 0;
+      this.shakeDirection.y = 0;
     }
   }
 }
@@ -269,34 +272,26 @@ const obstacles = [
 
 //Function to check for collision between the ball and an obstacle
 function checkBallObstacleCollision(ball, obstacle) {
-  //calculate the distance between the center of the ball and the center of the obstacle
-  const dx = ball.x - obstacle.x;
-  const dy = ball.y - obstacle.y;
+  const dx = ball.x - obstacle.originalX;
+  const dy = ball.y - obstacle.originalY;
+  console.log(`dy: ${dy}, ballY: ${ball.y}, obstacleY: ${obstacle.originalY}`);
   const distance = Math.sqrt(dx * dx + dy * dy);
 
-  //check if the distance is less than the sum of the ball and obstacle radius 
   if (distance < ball.radius + obstacle.r) {
-    // Collision detected so we play a bounce sound
-    BOUNCE_SOUND.play();
-    //trigger a shaking effect on the obstacle
-    obstacle.shakeFrames = 10;
-    //the collision ocurred
-    obstacle.shake();
+    // Collision detected
+    obstacle.shakeFrames = 1; // Shake for 5 frames, for example
+    const shakeDirectionX = dx / distance; // Normalized shake direction X
+    const shakeDirectionY = dy / distance; // Normalized shake direction Y
+    console.log(`shakeDirectionX: ${shakeDirectionX}, shakeDirectionY: ${shakeDirectionY} and distance: ${distance}`);
+    obstacle.shake(shakeDirectionX, shakeDirectionY);
     return true;
   }
-  //in case no collision was detected
+  
   return false;
 }
-function draw(){
-      //clear canvas
-      ctx.clearRect(0, 0, W, H);
 
-      //draw each obstacle in obstacles array
-      for (const obstacle of obstacles) {
-        obstacle.draw();
-      }
-}
 
+// Function to check if the mouse position intersects with an obstacle
 function move(e) {
   //check if mouse btn is not pressed
   if (!isMouseDown) {
@@ -362,6 +357,7 @@ function getMousePosition(e){
     y: Math.round(e.y - rect.top)
   }
 }
+
 function intersects(obstacle) {
   // subtract the x, y coordinates from the mouse position to get coordinates 
   // for the hotspot location and check against the area of the radius
@@ -371,7 +367,7 @@ function intersects(obstacle) {
   return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
 }
 
-draw();
+
 
 // Function to create a new ball and add it to the balls array
 function createBall() {
@@ -522,7 +518,7 @@ function handleCollisions() {
     }
     // Top border collision
     if (ball.y - ball.radius < borderWidth && ball.speedY < 0) {
-      ball.speedY *= -1;
+      ball.speedY *= -4;
     }
 
     // Bottom border collision
@@ -565,7 +561,6 @@ function handleCollisions() {
   }
   });
 
-  
 }
 
 
@@ -627,7 +622,6 @@ function update() {
         }
 
       } else if (ballAngle <= arcEndAngle) {
-        console.log('ball has passed the end of the arc');
         ball.inPlay = true;
       }
       else {
@@ -711,7 +705,9 @@ if (downKeyIsPressed) {
   leftFlipper.update();
   rightFlipper.update();
   // Draw the obstacles
-  obstacles.forEach(obstacle => obstacle.draw());
+  obstacles.forEach(obstacle => {
+    obstacle.draw();
+  });
 
   // Request the next frame
   requestAnimationFrame(update);
@@ -754,6 +750,7 @@ window.onload = () => {
   canvas.addEventListener("mousemove", move);
   canvas.addEventListener("mouseup", setDraggable);
 
+  
   createBall();  // Start the game with one ball
   update();
 };
