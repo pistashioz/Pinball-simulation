@@ -14,9 +14,10 @@ const BOUNCE_SOUND = new Audio("assets/audio/Jump.wav");
 const BOUNCE_FLIPPERS = new Audio("assets/audio/jumpFlipper.wav");
 const GRAB_OBSTACLES = new Audio("assets/audio/grab.wav");
 
+let mousePosition = { x: 0, y: 0 };
 let isMouseDown = false;
 let focused = { state: false, key: null };
-let pause = false;
+let isPause = false;
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
@@ -208,7 +209,7 @@ class Ball {
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fillStyle = "#00ff00"; // Green color for the ball
     ctx.fill();
-    //ctx.stroke();
+    ctx.stroke();
     ctx.closePath();
   }
 }
@@ -236,6 +237,7 @@ class Obstacle {
     ctx.arc(drawX, drawY, this.r, 0, 2 * Math.PI);
     ctx.fillStyle = this.color;
     ctx.fill();
+    ctx.stroke();
     ctx.closePath();
 
     // Draw the smaller circle
@@ -264,73 +266,63 @@ const obstacles = [
   new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
 ];
 
-
+function drawObstacle(obstacle) {
+  console.log('Drawing obstacle');
+  obstacle.draw();
+}
 
 // Function to check if the mouse position intersects with an obstacle
 function move(e) {
-  //check if mouse btn is not pressed
-  if (!isMouseDown) {
+  if (!isPause || !isMouseDown) {
+    console.log(`Drag skipped - isPaused: ${isPause}, isMouseDown: ${isMouseDown}`);
     return;
   }
+
   getMousePosition(e);
 
-  //check if an obstacle is focused for movement
   if (focused.state) {
-    //update the focused obstacle's position to the mouse position
-    obstacles[focused.key].x = mousePosition.x;
-    obstacles[focused.key].y = mousePosition.y;
+    const obstacle = obstacles[focused.key];
+    // Ensure the obstacle stays within the canvas borders
+    const newX = Math.max(26 + obstacle.r, Math.min(W - 20 - obstacle.r, mousePosition.x));
+    const newY = Math.max(0 + obstacle.r, Math.min(H - obstacle.r, mousePosition.y));
+    obstacle.x = newX;
+    obstacle.y = newY;
 
-    draw();
-    return;
-  }
-  //if no obstacle is focused
-  for (var i = 0; i < obstacles.length; i++) {
-    //check if mouse intersects with an obstacle
-    if (intersects(obstacles[i])) {
-      //play audio if intersection is detected and change focused state to true so we can store the index of the focused obstacle
-      GRAB_OBSTACLES.play()
-      focused.state = true;
-      focused.key = i;
-      //increase the size of the current obstacle to be perceived as we grabbed it
-      obstacles[i].r = 35;
-      break;
-    }
-  }
-
-  draw();
-}
-
-
-function setDraggable(e) {
-  let type = e.type;
-  if (type === "mousedown") {
-    isMouseDown = true;
-  } else if (type === "mouseup") {
-    
+    console.log(`Obstacle ${focused.key} moved to - X: ${newX}, Y: ${newY}`);
+    drawObstacle(obstacle);
+  } else {
     for (let i = 0; i < obstacles.length; i++) {
       if (intersects(obstacles[i])) {
-        //change to obstacle's normal size after being dragged
-        obstacles[i].r = 25;
+        focused.state = true;
+        focused.key = i;
+        obstacles[i].r *= 1.1; // Slightly increase the radius to indicate selection
+        console.log(`Obstacle ${i} focused`);
+        break;
       }
     }
-    //indicates the mouse button is released
-    isMouseDown = false;
-    releaseFocus();
   }
 }
 
-
-function releaseFocus(){
-  focused.state = false
+function setDraggable(e) {
+  isMouseDown = e.type === "mousedown";
+  console.log(`Mouse ${e.type} at - X: ${e.clientX}, Y: ${e.clientY}`);
+  if (!isMouseDown) {
+    if (focused.state) {
+      obstacles[focused.key].r /= 1.1; // Reset the radius
+      focused.state = false;
+      focused.key = null;
+      console.log(`Focus released`);
+    }
+  }
 }
 
-function getMousePosition(e){
-  var rect = canvas.getBoundingClientRect();
-  //calculate mouse position relative to the canvas
+function getMousePosition(e) {
+  const rect = canvas.getBoundingClientRect();
   mousePosition = {
-    x: Math.round(e.x - rect.left),
-    y: Math.round(e.y - rect.top)
-  }
+    x: Math.round(e.clientX - rect.left),
+    y: Math.round(e.clientY - rect.top)
+  };
+  console.log(`Mouse position - X: ${mousePosition.x}, Y: ${mousePosition.y}`);
 }
 
 function intersects(obstacle) {
@@ -338,7 +330,6 @@ function intersects(obstacle) {
   // for the hotspot location and check against the area of the radius
   var areaX = mousePosition.x - obstacle.x;
   var areaY = mousePosition.y - obstacle.y;
-  //return true if x^2 + y^2 <= radius squared.
   return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
 }
 
@@ -470,8 +461,8 @@ function reflect(ball, obstacle) {
   ball.speedY = ball.speedY - 2 * dot * normal.y;
 
   // This would be the place to adjust ball's speed to simulate energy loss
-   //ball.speedX *= energyLossFactor;
-   //ball.speedY *= energyLossFactor;
+   ball.speedX *= 0.95;
+   ball.speedY *= 0.95;
 }
 
 
@@ -482,7 +473,7 @@ function handleCollisions() {
   const throwingMechWidth = 58;
 
   ballsArray.forEach((ball, index) => {
-    if (!pause) {
+    if (!isPause) {
     // Ball collision with the top of the throwing mechanism
     if (ball.x >= throwingMechanism.x &&
         ball.x <= throwingMechanism.x + throwingMechanism.width &&
@@ -547,11 +538,12 @@ function handleCollisions() {
 
     //Check for collision between the ball and an obstacle
 obstacles.forEach(obstacle => {
-  const dx = ball.x - obstacle.originalX;
-  const dy = ball.y - obstacle.originalY;
-  const distance = Math.sqrt(dx * dx + dy * dy);
+  let dx = obstacle.originalX - ball.x;
+  let dy = obstacle.originalY - ball.y;
+  let distance = Math.sqrt(dx * dx + dy * dy);
+  const sumOfRadii = ball.radius + obstacle.r + 2; //adding two because of the stroke
 
-  if (distance < ball.radius + obstacle.r) {
+  if (distance <= sumOfRadii) {
     // Collision detected
     obstacle.shakeFrames = 10; // Shake for 5 frames, for example
     const shakeDirectionX = dx / distance; // Normalized shake direction X
@@ -575,6 +567,7 @@ obstacles.forEach(obstacle => {
 
 // The update function, called once per frame
 function update() {
+ 
   ctx.clearRect(0, 0, W, H);
 
   ctx.fillStyle = 'palegreen';
@@ -712,13 +705,14 @@ if (downKeyIsPressed) {
 
   leftFlipper.update();
   rightFlipper.update();
-  // Draw the obstacles
-  obstacles.forEach(obstacle => {
-    obstacle.draw();
-  });
+    // Always draw the obstacles, even when paused
+    obstacles.forEach(obstacle => {
+      obstacle.draw();
+    }); 
 
-  // Request the next frame
-  requestAnimationFrame(update);
+
+
+  requestAnimationFrame(update); // Keep the animation loop running
 }
 
 // Event listeners for key presses
@@ -741,7 +735,7 @@ window.onload = () => {
     }
     // if the event key is the space bar
     else if (event.key === " ") {
-      pause = !pause
+      isPause = !isPause
       event.preventDefault()
     }
   });
@@ -754,7 +748,11 @@ window.onload = () => {
       downKeyIsPressed = false;
     };
   });
-  canvas.addEventListener("mousedown", setDraggable);
+  // Add event listeners for the drag feature
+  canvas.addEventListener("mousedown", function(e) {
+    setDraggable(e);
+    move(e); // Begin the drag on mousedown
+  });
   canvas.addEventListener("mousemove", move);
   canvas.addEventListener("mouseup", setDraggable);
 
