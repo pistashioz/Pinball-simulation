@@ -5,8 +5,10 @@ const ctx = canvas.getContext("2d");
 // Global variables for easier access
 const W = canvas.width;
 const H = canvas.height;
-const GRAVITY = 0.05;
+const GRAVITY = 0.75;
 const BOUNCE_THRESHOLD = 2.5; // Minimum speed for bounce
+
+const MIDDLE_OFFSET =   W/2 +13;
 //sound effects
 const BOUNCE_SOUND = new Audio("assets/audio/Jump.wav");
 const BOUNCE_FLIPPERS = new Audio("assets/audio/jumpFlipper.wav");
@@ -213,11 +215,13 @@ class Ball {
 
 class Obstacle {
   constructor(x, y, r, color) {
+    this.originalX = x;
+    this.originalY = y;
     this.x = x;
     this.y = y;
     this.r = r;
     this.color = color
-    this.shakeFrames = 5;
+    this.shakeFrames = 0; // Initializing this at 0 so it does not shake on page load
     this.shakeMagnitude = 5; // Adjust the magnitude of the shake
   }
 
@@ -247,6 +251,9 @@ class Obstacle {
       this.y += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
       // decrease the number of remaining shake frames
       this.shakeFrames--;
+    } else {
+      this.x = this.originalX;  
+      this.y = this.originalY;
     }
   }
 }
@@ -255,11 +262,9 @@ const throwingMechanism = new ThrowingMechanism(W - 57, H - 120, 37, 100);
 
 //Array with obstacles' values
 const obstacles = [
-  new Obstacle(W / 2-180, H / 2 - 50, 25, 'red'),
+  new Obstacle(MIDDLE_OFFSET, H / 2 - 50, 25, 'red'),
   new Obstacle(W / 2 + 100, H / 2 - 150, 25, 'blue'),
   new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
-  new Obstacle(W / 2 + 100, H / 2 + 50, 25, 'purple'),
-  new Obstacle(W / 2 - 100, H / 2 + 50, 25,'yellow'),
 ];
 
 //Function to check for collision between the ball and an obstacle
@@ -276,6 +281,7 @@ function checkBallObstacleCollision(ball, obstacle) {
     //trigger a shaking effect on the obstacle
     obstacle.shakeFrames = 10;
     //the collision ocurred
+    obstacle.shake();
     return true;
   }
   //in case no collision was detected
@@ -371,8 +377,8 @@ draw();
 function createBall() {
   const speedX = 0; // Random horizontal speed
   const speedY = 5; // Always start with the same upward speed
-  const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 120, 10, 0, speedY);
-  //const newBall = new Ball(200, 100, 10, speedX, speedY, 'steel');
+  //const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 120, 10, 0, speedY);
+  const newBall = new Ball(MIDDLE_OFFSET, 100, 10, speedX, speedY, 'steel');
   ballsArray.push(newBall);
 }
 
@@ -390,9 +396,7 @@ function removeBall(index) {
 function drawShadows() {
 
   ctx.save();
-  ctx.lineWidth = 4;
   ctx.fillStyle = "black"
-  ctx.strokeStyle = 'pink';
   ctx.beginPath();
   ctx.moveTo(W - 20, 20);
   ctx.lineTo(W - 28, 20);
@@ -421,8 +425,8 @@ function drawBorder() {
   // Drawing borders in a loop to avoid repetition
   const borderPath = [
     { moveTo: [26, 0], lineTo: [46, 20], close: [W - 20, 20], end: [W, 0] },
-    { moveTo: [26, 0], lineTo: [46, 20], close: [46, H - 20], end: [26, H] },
-    { moveTo: [W, 0], lineTo: [W - 20, 20], close: [W - 20, H - 20], end: [W, H] },
+    { moveTo: [26, 0], lineTo: [46, 20], close: [46, H - 20], end: [26, H] }, // right border
+    { moveTo: [W, 0], lineTo: [W - 20, 20], close: [W - 20, H - 20], end: [W, H] }, // left border
     { moveTo: [26, H], lineTo: [46, H - 20], close: [W - 20, H - 20], end: [W, H] }
   ];
 
@@ -464,7 +468,15 @@ function throwingMech() {
   ctx.arc(W - 158, 150, radius, startAngle, endAngle, true);
 
   ctx.stroke();
-  ctx.restore();
+
+  ctx.beginPath();
+  ctx.lineWidth=1;
+  ctx.moveTo(MIDDLE_OFFSET, 20);
+  ctx.lineTo(MIDDLE_OFFSET, H);
+  ctx.stroke();
+  ctx.closePath();
+
+    ctx.restore();
 
 
 
@@ -561,8 +573,9 @@ function handleCollisions() {
 // The update function, called once per frame
 function update() {
   ctx.clearRect(0, 0, W, H);
+
   ctx.fillStyle = 'palegreen';
-  ctx.fillRect(26, 20, W, H);
+  ctx.fillRect(47, 21, W, H);
 
   ctx.beginPath();
   ctx.arc(W - 140, 140, 100, 0, -1.6, true);

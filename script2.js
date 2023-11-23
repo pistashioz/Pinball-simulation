@@ -255,7 +255,8 @@ function handleCollisions() {
 function update() {
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = 'palegreen';
-  ctx.fillRect(26, 20, W, H);
+  ctx.fillRect(47, 21, W-75, H-22);
+  ctx.strokeRect(47, 21, W-75, H-22);
   // Update and draw each ball
   ballsArray.forEach(ball => {
     if (!ball.onThrowingMechanism) {
