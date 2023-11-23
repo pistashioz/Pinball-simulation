@@ -1,10 +1,15 @@
+@font-face{
+  font-family: 'Recoleta';
+  src: url('./assets/fonts/Recoleta-Bold.ttf')
+}
+
 html, body {
   margin: 0;
   padding: 0;
   background: url('/assets/img/bg.svg');
   background-repeat: no-repeat;
   background-size: cover;
-  font-family: 'Sniglet', cursive;
+  font-family: 'Recoleta';
   font-weight: bold;
   color: rgb(75, 45, 136)
 }
@@ -83,7 +88,7 @@ padding: 10px;
 display: block;
 margin-left: auto; 
 margin-right: auto;
-font-family: 'Sniglet', cursive;
+font-family: 'Recoleta';
 font-weight: bold;
 color: #676767;
 transition: border 0.5s;
@@ -110,7 +115,7 @@ height: 50px;
 cursor: pointer;
 margin-top: 10px;
 font-size: 1.29em;
-font-family: 'Sniglet', cursive;
+font-family: 'Recoleta';
 -webkit-transition: background-color 0.5s;
 -moz-transition: background-color 0.5s;
 -o-transition: background-color 0.5s;
@@ -128,7 +133,7 @@ padding-left: 15px;
 
 /* Dropdown Button */
 .dropbtn {
-  font-family: 'Sniglet', cursive;
+  font-family: 'Recoleta';
   font-weight: bold;
   background-color: #b4be89;
   color: rgb(52, 47, 47);
@@ -165,7 +170,7 @@ transition: background-color 0.5s;
 
 /* Dropdown Content (Hidden by Default) */
 .dropdown-content {
-  font-family: 'Sniglet', cursive;
+  font-family: 'Recoleta';
   font-weight: bold;
   display: none;
   position: absolute;
