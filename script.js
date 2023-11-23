@@ -266,10 +266,6 @@ const obstacles = [
   new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
 ];
 
-function drawObstacle(obstacle) {
-  console.log('Drawing obstacle');
-  obstacle.draw();
-}
 
 // Function to check if the mouse position intersects with an obstacle
 function move(e) {
@@ -285,11 +281,11 @@ function move(e) {
     // Ensure the obstacle stays within the canvas borders
     const newX = Math.max(26 + obstacle.r, Math.min(W - 20 - obstacle.r, mousePosition.x));
     const newY = Math.max(0 + obstacle.r, Math.min(H - obstacle.r, mousePosition.y));
-    obstacle.x = newX;
-    obstacle.y = newY;
+    obstacle.originalX = newX;
+    obstacle.originalY  = newY;
 
     console.log(`Obstacle ${focused.key} moved to - X: ${newX}, Y: ${newY}`);
-    drawObstacle(obstacle);
+    
   } else {
     for (let i = 0; i < obstacles.length; i++) {
       if (intersects(obstacles[i])) {
@@ -328,8 +324,8 @@ function getMousePosition(e) {
 function intersects(obstacle) {
   // subtract the x, y coordinates from the mouse position to get coordinates 
   // for the hotspot location and check against the area of the radius
-  var areaX = mousePosition.x - obstacle.x;
-  var areaY = mousePosition.y - obstacle.y;
+  const areaX = mousePosition.x - obstacle.originalX;
+  const areaY = mousePosition.y - obstacle.originalY;
   return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
 }
 
