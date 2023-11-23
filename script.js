@@ -208,7 +208,7 @@ class Ball {
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fillStyle = "#00ff00"; // Green color for the ball
     ctx.fill();
-    ctx.stroke();
+    //ctx.stroke();
     ctx.closePath();
   }
 }
@@ -222,7 +222,7 @@ class Obstacle {
     this.r = r;
     this.color = color;
     this.shakeFrames = 0; // No shake initially
-    this.shakeMagnitude = 4; // Shake by 4 pixels/units
+    this.shakeMagnitude = 2; // Shake by 4 pixels/units
     this.shakeDirection = { x: 0, y: 0 };
   }
 
@@ -248,16 +248,10 @@ class Obstacle {
 
   shake(dx, dy) {
     if (this.shakeFrames > 0) {
-      //this.shakeDirection.x = dx * this.shakeMagnitude;
+       this.shakeDirection.x = dx * this.shakeMagnitude;
       this.shakeDirection.y = dy * this.shakeMagnitude;
-      console.log(`shakeDirectionY: ${this.shakeDirection.y}, dy: ${dy}, this.shakeMagnitude: ${this.shakeMagnitude}`);
-      console.log(this.shakeDirection.y);
       this.shakeFrames--;
-    } else {
-      // Reset the shake direction after the effect is over
-      this.shakeDirection.x = 0;
-      this.shakeDirection.y = 0;
-    }
+    } 
   }
 }
 
@@ -270,25 +264,6 @@ const obstacles = [
   new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
 ];
 
-//Function to check for collision between the ball and an obstacle
-function checkBallObstacleCollision(ball, obstacle) {
-  const dx = ball.x - obstacle.originalX;
-  const dy = ball.y - obstacle.originalY;
-  console.log(`dy: ${dy}, ballY: ${ball.y}, obstacleY: ${obstacle.originalY}`);
-  const distance = Math.sqrt(dx * dx + dy * dy);
-
-  if (distance < ball.radius + obstacle.r) {
-    // Collision detected
-    obstacle.shakeFrames = 1; // Shake for 5 frames, for example
-    const shakeDirectionX = dx / distance; // Normalized shake direction X
-    const shakeDirectionY = dy / distance; // Normalized shake direction Y
-    console.log(`shakeDirectionX: ${shakeDirectionX}, shakeDirectionY: ${shakeDirectionY} and distance: ${distance}`);
-    obstacle.shake(shakeDirectionX, shakeDirectionY);
-    return true;
-  }
-  
-  return false;
-}
 
 
 // Function to check if the mouse position intersects with an obstacle
@@ -374,7 +349,7 @@ function createBall() {
   const speedX = 0; // Random horizontal speed
   const speedY = 5; // Always start with the same upward speed
   //const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 120, 10, 0, speedY);
-  const newBall = new Ball(MIDDLE_OFFSET, 100, 10, speedX, speedY, 'steel');
+  const newBall = new Ball(MIDDLE_OFFSET, 100, 10, -5, 0, 'steel');
   ballsArray.push(newBall);
 }
 
@@ -468,7 +443,7 @@ function throwingMech() {
   ctx.beginPath();
   ctx.lineWidth=1;
   ctx.moveTo(MIDDLE_OFFSET, 20);
-  ctx.lineTo(MIDDLE_OFFSET, H);
+  //ctx.lineTo(MIDDLE_OFFSET, H);
   ctx.stroke();
   ctx.closePath();
 
@@ -479,6 +454,26 @@ function throwingMech() {
 
 }
 console.log(ballsArray);
+
+function reflect(ball, obstacle) {
+  // Calculate the normal vector at the point of collision
+  const normal = { x: ball.x - obstacle.originalX, y: ball.y - obstacle.originalY };
+  const normalLength = Math.sqrt(normal.x * normal.x + normal.y * normal.y);
+  normal.x /= normalLength;
+  normal.y /= normalLength;
+
+  // Calculate dot product of ball's velocity and the normal
+  const dot = ball.speedX * normal.x + ball.speedY * normal.y;
+
+  // Reflect the ball's velocity vector over the normal vector
+  ball.speedX = ball.speedX - 2 * dot * normal.x;
+  ball.speedY = ball.speedY - 2 * dot * normal.y;
+
+  // This would be the place to adjust ball's speed to simulate energy loss
+   //ball.speedX *= energyLossFactor;
+   //ball.speedY *= energyLossFactor;
+}
+
 
 // Function to handle all ball collisions
 function handleCollisions() {
@@ -550,14 +545,27 @@ function handleCollisions() {
       ball.speedY *= -1; // Reflect the ball vertically
     }
 
-    for (const obstacle of obstacles) {
-      obstacle.shake();
-      if (checkBallObstacleCollision(ball, obstacle)) {
-        // Reverse ball direction and apply shake effect on obstacle
-        ball.speedY *= -1; // Reverse vertical direction
-        //cambiar la posicion frame por frame
-      }
-    }
+    //Check for collision between the ball and an obstacle
+obstacles.forEach(obstacle => {
+  const dx = ball.x - obstacle.originalX;
+  const dy = ball.y - obstacle.originalY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance < ball.radius + obstacle.r) {
+    // Collision detected
+    obstacle.shakeFrames = 10; // Shake for 5 frames, for example
+    const shakeDirectionX = dx / distance; // Normalized shake direction X
+    const shakeDirectionY = dy / distance; // Normalized shake direction Y
+    obstacle.shake(shakeDirectionX, shakeDirectionY);
+    reflect(ball, obstacle);
+  }else {
+    obstacle.shakeDirection.x = 0;
+    obstacle.shakeDirection.y = 0;
+  }
+ 
+});
+
+
   }
   });
 
