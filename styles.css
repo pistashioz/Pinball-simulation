@@ -30,7 +30,7 @@ html, body {
 }
 
 #canvas {
-  background-color: #000;
+  background-color: #232323;
   padding-left: 0;
   padding-right: 0;
   margin-left: auto;
@@ -103,7 +103,7 @@ border: solid 3px pink
 input[type="submit"]{
 border: solid 3px rgb(233, 231, 208);
 border-style: inset;
-background-color: rgb(47, 0, 255);
+background-color: #5fa0a6;
 color: white;
 height: 50px;
   width: 100px;
@@ -117,7 +117,7 @@ font-family: 'Sniglet', cursive;
 transition: background-color 0.5s;
 }
 input[type="submit"]:hover{
-background-color: #0e93e5;
+background-color: #479097;
 
 }
 label{
@@ -128,20 +128,28 @@ padding-left: 15px;
 
 /* Dropdown Button */
 .dropbtn {
-  background-color: #3498DB;
-  color: white;
+  font-family: 'Sniglet', cursive;
+  font-weight: bold;
+  background-color: #b4be89;
+  color: rgb(52, 47, 47);
   padding: 16px;
   font-size: 16px;
   border: none;
   cursor: pointer;
   border-radius: 10px;
   border: 3px solid;
-  border-color: rgb(105, 44, 2)
+  border-style: outset;
+  border-width: 10px;
+  border-color: rgb(233, 231, 208);
+  -webkit-transition: background-color 0.5s;
+-moz-transition: background-color 0.5s;
+-o-transition: background-color 0.5s;
+transition: background-color 0.5s;
 }
 
 /* Dropdown button on hover & focus */
 .dropbtn:hover, .dropbtn:focus {
-  background-color: #2980B9;
+  background-color: #8b9756;
 }
 
 /* The container <div> - needed to position the dropdown content */
@@ -149,7 +157,7 @@ padding-left: 15px;
   position: relative;
   display: inline-block;
   display: block;
-  margin-left: 69%;
+  margin-left: 68%;
   margin-top: -15%;
   
 }
@@ -157,9 +165,11 @@ padding-left: 15px;
 
 /* Dropdown Content (Hidden by Default) */
 .dropdown-content {
+  font-family: 'Sniglet', cursive;
+  font-weight: bold;
   display: none;
   position: absolute;
-  background-color: #f1f1f1;
+  background-color: #ced5ac;
   min-width: 160px;
   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
   z-index: 1;
@@ -167,10 +177,11 @@ padding-left: 15px;
 
 /* Links inside the dropdown */
 .dropdown-content a {
-  color: black;
+  color: rgb(52, 47, 47);
   padding: 12px 16px;
   text-decoration: none;
   display: block;
+  
 }
 
 /* Change color of dropdown links on hover */
