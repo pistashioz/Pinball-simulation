@@ -287,5 +287,3 @@ window.onload = () => {
   createBall();  // Start the game with one ball
   update();
 };
-
-

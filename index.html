@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" type="text/css" href="styles.css" />
 </head>
-
 <style>
 /* Styles for the canvas element */
 #canvas {
@@ -68,7 +67,7 @@
       margin: 0;
     }
 
-
+</style>
 <body>
     <canvas id="canvas" width="476" height="650"></canvas>
     <div class="vertical-rectangle">
@@ -82,7 +81,7 @@
         </div>
         <div class="horizontal-rectangle"></div>
       </div>
-    <script src="script.js"></script>
+    <script src="script2.js"></script>
     <script>
 // JavaScript to toggle animation play state and get scale number
 document.body.onkeydown = function(e) {
@@ -91,7 +90,6 @@ document.body.onkeydown = function(e) {
     const style = window.getComputedStyle(rectangle);
     const playState = style.getPropertyValue('animation-play-state') === 'paused' ? 'running' : 'paused';
     rectangle.style.animationPlayState = playState;
-
 
     if (playState === 'paused') {
       // Calculate which number the blue rectangle is closest to when stopped
