@@ -336,7 +336,7 @@ function createBall() {
   const speedX = 0; // Random horizontal speed
   const speedY = 5; // Always start with the same upward speed
   //const newBall = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 120, 10, 0, speedY);
-  const newBall = new Ball(MIDDLE_OFFSET, 100, 10, -5, 0, 'steel');
+   const newBall = new Ball(MIDDLE_OFFSET, 100, 10, -5, 0, 'steel');
   ballsArray.push(newBall);
 }
 
@@ -469,7 +469,7 @@ function handleCollisions() {
   const throwingMechWidth = 58;
 
   ballsArray.forEach((ball, index) => {
-    if (!isPause) {
+     
     // Ball collision with the top of the throwing mechanism
     if (ball.x >= throwingMechanism.x &&
         ball.x <= throwingMechanism.x + throwingMechanism.width &&
@@ -506,6 +506,7 @@ function handleCollisions() {
     // Bottom border collision
     if (ball.y + ball.radius > H && ball.speedY > 0) {
       // alert('You lost! Click OK to launch a new ball.');
+      isPause = false;
       removeBall(index);
       return;
     }
@@ -554,7 +555,7 @@ obstacles.forEach(obstacle => {
 });
 
 
-  }
+  
   });
 
 }
@@ -564,16 +565,8 @@ obstacles.forEach(obstacle => {
 // The update function, called once per frame
 function update() {
  
-  ctx.clearRect(0, 0, W, H);
 
-  ctx.fillStyle = 'palegreen';
-  ctx.fillRect(47, 21, W, H);
-
-  ctx.beginPath();
-  ctx.arc(W - 140, 140, 100, 0, -1.6, true);
-  ctx.stroke();
-  ctx.closePath();
-
+  if (!isPause) {
   // Define the arc parameters
   const arcCenterX = W - 140;
   const arcCenterY = 140;
@@ -583,6 +576,7 @@ function update() {
   const MIN_VELOCITY_THRESHOLD = 1.5; // This value should be determined experimentally or calculated based on physics
 
   // Update and draw each ball
+  
   ballsArray.forEach(ball => {
     if (!ball.onThrowingMechanism) {
       // Apply gravity if the ball is not on the arc
@@ -633,15 +627,9 @@ function update() {
       ball.inPlay = false; // Reset inPlay when ball is on the mechanism
     }
 
-    ball.draw();
+
   });
 
-  drawShadows();
-
-  throwingMechanism.draw();
-
-  drawBorder();
-  throwingMech();
 
   handleCollisions();
 
@@ -692,7 +680,25 @@ if (downKeyIsPressed) {
   }
 }
 
+  }
 
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = 'palegreen';
+  ctx.fillRect(47, 21, W, H);
+
+  ctx.beginPath();
+  ctx.arc(W - 140, 140, 100, 0, -1.6, true);
+  ctx.stroke();
+  ctx.closePath();
+
+  ballsArray.forEach(ball => {    ball.draw();}); 
+  drawShadows();
+
+  throwingMechanism.draw();
+
+  drawBorder();
+  throwingMech();
 
   // Draw flippers after the balls
   

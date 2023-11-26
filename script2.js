@@ -49,12 +49,22 @@ class InvisibleFlipper {
     });
     ctx.closePath();
     ctx.stroke();
+            // Draw the pivot circle
+            ctx.beginPath();
+            ctx.arc(0.5, -0.87, 4, 0, Math.PI * 2);
+            ctx.fillStyle = 'purple';
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
     ctx.restore(); // Restore the context to its original state
+
+
   }
 
   // Method to update the trapezium's points based on the flipper's current angle
   updateTrapezium(angle) {
     this.angle = angle; // Update the angle to match the visible flipper
+ 
     // Transform the trapezium points based on the new angle if needed
   }
 
@@ -82,28 +92,11 @@ detectCollision(ball) {
   }
 
   // Calculate the distance from the ball to the line segment
-  const distToLine = Math.abs(rotatedBallPos.y - lineStart.y); // Since the line is horizontal after rotation, y is constant
+  const distToLine = Math.abs(rotatedBallPos.y - lineStart.y) -0.1; // Since the line is horizontal after rotation, y is constant
 
   // Check for collision (the ball is colliding if the distance to the line is less than its radius)
   if (distToLine <= ball.radius) {
     // Handle the collision
-    // Calculate the normal vector of the line
-    const lineAngle = Math.atan2(lineEnd.y - lineStart.y, lineEnd.x - lineStart.x);
-    const normal = { x: Math.sin(lineAngle), y: -Math.cos(lineAngle) };
-    console.log(normal);
-    // Reflect the ball's velocity vector off the line's normal vector
-    const dotProduct = ball.speedX * normal.x + ball.speedY * normal.y;
-    ball.speedX = ball.speedX - 2 * dotProduct * normal.x;
-    ball.speedY = ball.speedY - 2 * dotProduct * normal.y;
-
-    // Multiply by restitution to reduce the energy of the ball post-collision
-    ball.speedX *= ball.restitution;
-    ball.speedY *= ball.restitution;
-
-    // Reposition the ball slightly outside the collision point to prevent sticking
-    ball.x += normal.x * (ball.radius - distToLine + 1);
-    ball.y += normal.y * (ball.radius - distToLine + 1);
-
     return true;
   }
 
@@ -212,6 +205,7 @@ class Ball {
   }
 }
 // Function to create a new ball and add it to the balls array
+
 function createBall() {
   const speedX = 0; // Random horizontal speed
   const speedY = 5; // Always start with the same upward speed
@@ -223,9 +217,60 @@ function removeBall(index) {
   ballsArray.splice(index, 1);
   createBall();
 }
+function reflectOffFlipper(ball, flipper, collisionPoint) {
+  // Calculate the angle of the normal at the collision point
+  // For the trapezium part, it will be perpendicular to the flipper's surface
+  let normal;
+  /*if (flipper.side === 'left') {
+    // Flipper facing right
+    normal = { x: Math.sin(flipper.angle * Math.PI / 180), y: -Math.cos(flipper.angle * Math.PI / 180) };
+    console.log(`normal: ${normal.x}, ${normal.y}`);
+  } else {
+    // Flipper facing left
+    normal = { x: -Math.sin(flipper.angle * Math.PI / 180), y: -Math.cos(flipper.angle * Math.PI / 180) };
+  }*/
+    // If collision is on the circular part of the flipper, adjust the normal vector accordingly
+    if (collisionPoint === 'trapezium') {
+      // Calculate the normal to the trapezium at the collision point
+      // Here you need to calculate the collision point and then the normal vector to that point
+      // This part of the code is not shown, but you'll need to calculate it based on your collision detection logic
+  
+      // Assuming lineStart and lineEnd are already rotated and translated into the world space
+  const direction = {
+    x: flipper.invisibleFlipper.trapeziumPoints[2].x - flipper.invisibleFlipper.trapeziumPoints[3].x,
+    y: flipper.invisibleFlipper.trapeziumPoints[2].y - flipper.invisibleFlipper.trapeziumPoints[3].y
+  };
+  
+  // Normalize the direction vector
+  const length = Math.sqrt(direction.x * direction.x + direction.y * direction.y);
+  direction.x /= length;
+  direction.y /= length;
+  
+  // Calculate the normal by rotating the direction 90 degrees (either direction)
+  normal = {
+    x: -direction.y,
+    y: direction.x
+  };
+    }
+    if (collisionPoint === 'circle') {
+      // Calculate the normal to the circle at the collision point
+      // Here you need to calculate the collision point and then the normal vector to that point
+      // This part of the code is not shown, but you'll need to calculate it based on your collision detection logic
+    }
+  
+
+  // Calculate dot product of ball's velocity and the normal
+  const dot = ball.speedX * normal.x + ball.speedY * normal.y;
+
+  // Reflect the ball's velocity vector over the normal vector
+  ball.speedX = ball.speedX - 2 * dot * normal.x;
+  ball.speedY = ball.speedY - 2 * dot * normal.y;
 
 
-
+  // Apply the energy loss
+  ball.speedX *= 0.95;
+  ball.speedY *= 0.95;
+}
 function handleCollisions() {
   ballsArray.forEach((ball, index) => {
     if (!pause) {
@@ -242,15 +287,18 @@ function handleCollisions() {
         return;
       }
 
-      // Collision with the upper line of the trapezium
-      if (leftFlipper.invisibleFlipper.detectCollision(ball)) {
-        // Collision handling code here (if any additional handling is needed)
-        console.log('Collision detected with the upper line of the trapezium');
-      }
+// You would call this function in your collision handling code
+if (leftFlipper.invisibleFlipper.detectCollision(ball)) {
+  // Determine the collision point ('trapezium' or 'circle')
+  let collisionPoint = 'trapezium'; // This is an example, you need to determine it based on your logic
+  reflectOffFlipper(ball, leftFlipper, collisionPoint);
+
+}
     }
   });
 }
-
+console.log(leftFlipper.invisibleFlipper)
+console.log(leftFlipper.invisibleFlipper)
 // The update function, called once per frame
 function update() {
   ctx.clearRect(0, 0, W, H);
