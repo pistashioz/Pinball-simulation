@@ -14,94 +14,73 @@ let ballsArray = []; // Array to store all the balls
 
 // Class defining the invisible parts of a flipper for collision detection
 class InvisibleFlipper {
-  constructor(x, y, length, width, angle) {
+  constructor(x, y, length, width, angle, angularSpeed, maxAngle, side) {
     this.x = x;
     this.y = y;
     this.length = length;
     this.width = width;
     this.angle = angle; // the current angle of the visible flipper
-
-    // Define the points of the trapezium relative to the flipper's pivot point
-    this.trapeziumPoints = [
-      { x: 0, y: 0 },
-      { x: this.length, y: 0 },
-      { x: this.length, y: -this.width / 3 },
-      { x: 0, y: -this.width / 2 }
-    ];
+    this.angularSpeed = angularSpeed;
+    this.maxAngle = 25; // Maximum rotation angle
+    this.side = side;
   }
 
-  // Method to draw the trapezium for collision detection (for debugging)
-  drawTrapezium() {
-    ctx.save(); // Save the current context state
-    ctx.translate(this.x, this.y); // Set the origin to the flipper's pivot point
-    ctx.rotate(this.angle * Math.PI / 180); // Convert angle to radians and rotate
+
+  drawRectangle() {
+    ctx.save();
+    ctx.translate(this.x, this.y); // Move to the pivot point
+
+    ctx.rotate(this.angle * Math.PI / 180); // Rotate by the flipper's angle
     ctx.beginPath();
     ctx.strokeStyle = 'pink';
     ctx.lineWidth = 2;
-
-    // Draw the trapezium based on the relative points
-    this.trapeziumPoints.forEach((point, index) => {
-      if (index === 0) {
-        ctx.moveTo(point.x, point.y);
-      } else {
-        ctx.lineTo(point.x, point.y);
-      }
-    });
-    ctx.closePath();
-    ctx.stroke();
-            // Draw the pivot circle
-            ctx.beginPath();
-            ctx.arc(0.5, -0.87, 4, 0, Math.PI * 2);
-            ctx.fillStyle = 'purple';
-            ctx.fill();
-            ctx.stroke();
-            ctx.closePath();
-    ctx.restore(); // Restore the context to its original state
-
-
+    ctx.strokeRect(0, 0, this.length, -15); // Draw the rectangle
+    ctx.restore();
   }
+  
 
   // Method to update the trapezium's points based on the flipper's current angle
-  updateTrapezium(angle) {
-    this.angle = angle; // Update the angle to match the visible flipper
- 
-    // Transform the trapezium points based on the new angle if needed
+  updateInvisibleRect() {
+    //this.angle = angle; // Update the angle to match the visible flipper
+    if (this.side === 'left' && leftKeyIsPressed) {
+      this.angle = Math.max(this.angle - this.angularSpeed, -this.maxAngle);
+
+    } else if (this.side === 'left') {
+      this.angle = Math.min(this.angle + this.angularSpeed, 25);
+    }
+  
   }
 
-  // Add collision detection methods here
-  // Method to detect collision with the upper line of the trapezium
+
 detectCollision(ball) {
-  // Convert the line segment and ball position to the same coordinate space
-  const lineStart = this.trapeziumPoints[3];
-  const lineEnd = this.trapeziumPoints[2];
+  // Calculate the ball's position relative to the flipper's pivot
   const relativeBallPos = {
     x: ball.x - this.x,
     y: ball.y - this.y
   };
 
-  // Rotate the ball position to align with the line segment
+
+  // Rotate the ball position to align with the flipper's coordinate space
+
   const angleRad = -this.angle * Math.PI / 180;
   const rotatedBallPos = {
     x: relativeBallPos.x * Math.cos(angleRad) - relativeBallPos.y * Math.sin(angleRad),
     y: relativeBallPos.x * Math.sin(angleRad) + relativeBallPos.y * Math.cos(angleRad)
   };
-
-  // Check if the ball is within the bounding box of the line segment
-  if (rotatedBallPos.x + ball.radius < lineStart.x || rotatedBallPos.x - ball.radius > lineEnd.x) {
-    return false; // No collision possible if the ball is outside the line segment bounds
-  }
-
-  // Calculate the distance from the ball to the line segment
-  const distToLine = Math.abs(rotatedBallPos.y - lineStart.y) -0.1; // Since the line is horizontal after rotation, y is constant
-
-  // Check for collision (the ball is colliding if the distance to the line is less than its radius)
-  if (distToLine <= ball.radius) {
-    // Handle the collision
+console.log('');
+  // Check if the rotated ball position is within the bounds of the rectangle
+  // Assuming the rectangle's bottom-left corner is at (0, -15) and the top-right corner is at (length, 5)
+  if (
+    rotatedBallPos.y - ball.radius < -15 && 
+    rotatedBallPos.y +ball.radius >  -15) {
+    // The ball is colliding with the rectangle
+    console.log('Detecting collision');
     return true;
   }
 
   return false;
 }
+
 }
 
 // Class defining a flipper
@@ -112,7 +91,7 @@ class Flipper {
     this.length = length;
     this.width = width;
     this.angularSpeed = angularSpeed;
-    this.angle = 30;
+    this.angle = 10;
     this.maxAngle = maxAngle; // Maximum rotation angle
     this.side = side;
   }
@@ -120,14 +99,14 @@ class Flipper {
   update() {
     if (this.side === 'left' && leftKeyIsPressed) {
       this.angle = Math.max(this.angle - this.angularSpeed, -this.maxAngle);
-      console.log('Left Flipper Angle: ' + this.angle);
-      console.log(this.x,this.y);
+
     } else if (this.side === 'left') {
-      this.angle = Math.min(this.angle + this.angularSpeed, 30);
+      this.angle = Math.min(this.angle + this.angularSpeed, 20);
     }
 
       // Update the invisible flipper's trapezium
-    this.invisibleFlipper.updateTrapezium(this.angle);
+   // this.invisibleFlipper.updateTrapezium(this.angle);
+
   }
   // Method to draw flipper on canvas
   draw() {
@@ -157,12 +136,13 @@ class Flipper {
     ctx.restore();
 
     // Drawing the invisible flipper's trapezium for debugging
-    this.invisibleFlipper.drawTrapezium();
+   
+    //this.invisibleFlipper.drawTrapezium();
   }
 }
 // Instantiating the flippers with a maximum angle they can rotate
-const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 60, 30, 5, 30, 'left');
-leftFlipper.invisibleFlipper = new InvisibleFlipper(leftFlipper.x, leftFlipper.y, leftFlipper.length, leftFlipper.width, leftFlipper.angle);
+const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 60, 30, 10, 30, 'left');
+const invisibleFlipper = new InvisibleFlipper(leftFlipper.x, leftFlipper.y, leftFlipper.length, leftFlipper.width, 25, 10, 30, 'left');
 
 // Class defining a ball
 class Ball {
@@ -217,60 +197,33 @@ function removeBall(index) {
   ballsArray.splice(index, 1);
   createBall();
 }
-function reflectOffFlipper(ball, flipper, collisionPoint) {
-  // Calculate the angle of the normal at the collision point
-  // For the trapezium part, it will be perpendicular to the flipper's surface
-  let normal;
-  /*if (flipper.side === 'left') {
-    // Flipper facing right
-    normal = { x: Math.sin(flipper.angle * Math.PI / 180), y: -Math.cos(flipper.angle * Math.PI / 180) };
-    console.log(`normal: ${normal.x}, ${normal.y}`);
-  } else {
-    // Flipper facing left
-    normal = { x: -Math.sin(flipper.angle * Math.PI / 180), y: -Math.cos(flipper.angle * Math.PI / 180) };
-  }*/
-    // If collision is on the circular part of the flipper, adjust the normal vector accordingly
-    if (collisionPoint === 'trapezium') {
-      // Calculate the normal to the trapezium at the collision point
-      // Here you need to calculate the collision point and then the normal vector to that point
-      // This part of the code is not shown, but you'll need to calculate it based on your collision detection logic
-  
-      // Assuming lineStart and lineEnd are already rotated and translated into the world space
-  const direction = {
-    x: flipper.invisibleFlipper.trapeziumPoints[2].x - flipper.invisibleFlipper.trapeziumPoints[3].x,
-    y: flipper.invisibleFlipper.trapeziumPoints[2].y - flipper.invisibleFlipper.trapeziumPoints[3].y
-  };
-  
-  // Normalize the direction vector
-  const length = Math.sqrt(direction.x * direction.x + direction.y * direction.y);
-  direction.x /= length;
-  direction.y /= length;
-  
-  // Calculate the normal by rotating the direction 90 degrees (either direction)
-  normal = {
-    x: -direction.y,
-    y: direction.x
-  };
-    }
-    if (collisionPoint === 'circle') {
-      // Calculate the normal to the circle at the collision point
-      // Here you need to calculate the collision point and then the normal vector to that point
-      // This part of the code is not shown, but you'll need to calculate it based on your collision detection logic
-    }
-  
+function reflectOffFlipper(ball, flipper) {
+  console.log('Reflect function called');
 
-  // Calculate dot product of ball's velocity and the normal
+  // Calculate the normal vector at the point of collision
+  // This normal assumes that the flipper is a flat surface
+  let normal = {
+    x: Math.cos((flipper.angle + 90) * Math.PI / 180), // Rotate by 90 degrees to get the perpendicular
+    y: Math.sin((flipper.angle + 90) * Math.PI / 180)
+  };
+
+  // Calculate the dot product of ball's velocity and the normal
   const dot = ball.speedX * normal.x + ball.speedY * normal.y;
 
   // Reflect the ball's velocity vector over the normal vector
+  // The new velocity is obtained by subtracting twice the dot product times the normal vector from the original velocity
   ball.speedX = ball.speedX - 2 * dot * normal.x;
   ball.speedY = ball.speedY - 2 * dot * normal.y;
 
+  // Log the new speed for debugging
+  console.log(`ball speedX: ${ball.speedX}, ball speedY: ${ball.speedY}`);
 
-  // Apply the energy loss
-  ball.speedX *= 0.95;
-  ball.speedY *= 0.95;
+  // Apply energy loss due to the collision
+  // The energy loss is simulated by reducing the speed by a certain percentage
+  ball.speedX *= 0.90;
+  ball.speedY *= 0.90;
 }
+
 function handleCollisions() {
   ballsArray.forEach((ball, index) => {
     if (!pause) {
@@ -288,17 +241,17 @@ function handleCollisions() {
       }
 
 // You would call this function in your collision handling code
-if (leftFlipper.invisibleFlipper.detectCollision(ball)) {
+if (invisibleFlipper.detectCollision(ball)) {
+ 
   // Determine the collision point ('trapezium' or 'circle')
   let collisionPoint = 'trapezium'; // This is an example, you need to determine it based on your logic
-  reflectOffFlipper(ball, leftFlipper, collisionPoint);
+  reflectOffFlipper(ball, invisibleFlipper);
 
 }
     }
   });
 }
-console.log(leftFlipper.invisibleFlipper)
-console.log(leftFlipper.invisibleFlipper)
+
 // The update function, called once per frame
 function update() {
   ctx.clearRect(0, 0, W, H);
@@ -318,6 +271,9 @@ function update() {
   // Draw flippers after the balls
   leftFlipper.draw();
   leftFlipper.update();
+
+  invisibleFlipper.drawRectangle();
+  invisibleFlipper.updateInvisibleRect();
   requestAnimationFrame(update);
 }
 
