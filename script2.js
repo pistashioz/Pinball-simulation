@@ -67,12 +67,13 @@ detectCollision(ball) {
     x: relativeBallPos.x * Math.cos(angleRad) - relativeBallPos.y * Math.sin(angleRad),
     y: relativeBallPos.x * Math.sin(angleRad) + relativeBallPos.y * Math.cos(angleRad)
   };
-console.log('');
+
   // Check if the rotated ball position is within the bounds of the rectangle
   // Assuming the rectangle's bottom-left corner is at (0, -15) and the top-right corner is at (length, 5)
-  if (
-    rotatedBallPos.y - ball.radius < -15 && 
-    rotatedBallPos.y +ball.radius >  -15) {
+  if (rotatedBallPos.x > 0  - ball.radius - this.length&& 
+    rotatedBallPos.x< 0 + ball.radius + this.length  &&
+    rotatedBallPos.y < 0 + ball.radius +15 && 
+    rotatedBallPos.y  > 0 - ball.radius  -15) {
     // The ball is colliding with the rectangle
     console.log('Detecting collision');
     return true;
