@@ -3,8 +3,11 @@
   src: url('./assets/fonts/Recoleta-Bold.ttf')
 }
 
-html, body {
+* {
   margin: 0;
+}
+
+html, body {
   padding: 0;
   background: url('/assets/img/bg.svg');
   background-repeat: no-repeat;
@@ -17,7 +20,6 @@ html, body {
 .background {
   background: url('/assets/img/elementos.svg') repeat 0 0;
   width: 100%;
-  margin: 0;
   text-align: center;
   height: 100%;
   padding-top: 695px;
@@ -102,7 +104,7 @@ box-sizing:border-box;
 border-color: pink;
 }
 input:focus{
-border: solid 3px pink
+border: solid 3px pink;
 }
 
 input[type="submit"]{
