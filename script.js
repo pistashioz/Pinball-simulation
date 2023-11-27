@@ -457,7 +457,7 @@ function reflect(ball, obstacle) {
   ball.speedY = ball.speedY - 2 * dot * normal.y;
 
   // This would be the place to adjust ball's speed to simulate energy loss
-   ball.speedX *= 0.95;
+   ball.speedX *= 0.95; 
    ball.speedY *= 0.95;
 }
 

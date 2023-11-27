@@ -5,7 +5,7 @@ const ctx = canvas.getContext("2d");
 // Global variables for easier access
 const W = canvas.width;
 const H = canvas.height;
-const GRAVITY = 0.05;
+const GRAVITY = 0.5;
 
 let pause = false;
 let leftKeyIsPressed = false;
@@ -32,9 +32,9 @@ class InvisibleFlipper {
 
     ctx.rotate(this.angle * Math.PI / 180); // Rotate by the flipper's angle
     ctx.beginPath();
-    ctx.strokeStyle = 'pink';
+   // ctx.strokeStyle = 'pink';
     ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, this.length, -15); // Draw the rectangle
+    ctx.rect(0, 0, this.length, -15); // Draw the rectangle
     ctx.restore();
   }
   
@@ -52,36 +52,54 @@ class InvisibleFlipper {
   }
 
 
-detectCollision(ball) {
-  // Calculate the ball's position relative to the flipper's pivot
-  const relativeBallPos = {
-    x: ball.x - this.x,
-    y: ball.y - this.y
-  };
+  // Method to detect collision with the rectangle part of the flipper
+  detectCollision(ball) {
+    // Calculate the ball's position relative to the rectangle's pivot
+    const relativeBallPos = {
+      x: ball.x - this.x,
+      y: ball.y - this.y
+    };
 
+    // Rotate the ball position to align with the rectangle's coordinate space
+    const angleRad = -this.angle * Math.PI / 180;
+    const rotatedBallPos = {
+      x: relativeBallPos.x * Math.cos(angleRad) - relativeBallPos.y * Math.sin(angleRad),
+      y: relativeBallPos.x * Math.sin(angleRad) + relativeBallPos.y * Math.cos(angleRad)
+    };
 
-  // Rotate the ball position to align with the flipper's coordinate space
+    const rect = {
+      x: 0, // x of the rectangle's pivot point
+      y: -17, // y of the rectangle's bottom
+      w: this.length,
+      h: 17
+    };
 
-  const angleRad = -this.angle * Math.PI / 180;
-  const rotatedBallPos = {
-    x: relativeBallPos.x * Math.cos(angleRad) - relativeBallPos.y * Math.sin(angleRad),
-    y: relativeBallPos.x * Math.sin(angleRad) + relativeBallPos.y * Math.cos(angleRad)
-  };
-
-  // Check if the rotated ball position is within the bounds of the rectangle
-  // Assuming the rectangle's bottom-left corner is at (0, -15) and the top-right corner is at (length, 5)
-  if (rotatedBallPos.x > 0  - ball.radius - this.length&& 
-    rotatedBallPos.x< 0 + ball.radius + this.length  &&
-    rotatedBallPos.y < 0 + ball.radius +15 && 
-    rotatedBallPos.y  > 0 - ball.radius  -15) {
-    // The ball is colliding with the rectangle
-    console.log('Detecting collision');
-    return true;
+  return RectCircleColliding(rotatedBallPos, ball.radius, rect);
+    
   }
 
-  return false;
+
+
 }
 
+// Collision detection function
+function RectCircleColliding(circlePos, circleRadius, rect) {
+
+  const rectCenterX = rect.x + rect.w / 2;
+  const rectCenterY = rect.y + rect.h / 2;
+
+  const distX = Math.abs(circlePos.x - rectCenterX);
+  const distY = Math.abs(circlePos.y - rectCenterY);
+
+  if (distX > (rect.w / 2 + circleRadius)) { return false; }
+  if (distY > (rect.h / 2 + circleRadius)) { return false; }
+
+  if (distX <= (rect.w / 2)) { return true; } 
+  if (distY <= (rect.h / 2)) { return true; }
+
+  const dx = distX - rect.w / 2;
+  const dy = distY - rect.h / 2;
+  return (dx * dx + dy * dy <= (circleRadius * circleRadius));
 }
 
 // Class defining a flipper
@@ -121,7 +139,7 @@ class Flipper {
     ctx.closePath();
     // Style and fill the flipper body
     ctx.fillStyle =  'red';
-    ctx.fill();
+    //ctx.fill();
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 2;
     ctx.stroke();
@@ -156,6 +174,7 @@ class Ball {
     this.material = material;
     this.onThrowingMechanism = false;
     this.setPhysicalProperties(material);
+    this.colliding = false;
   }
   setPhysicalProperties(material) {
     switch (material) {
@@ -189,8 +208,8 @@ class Ball {
 
 function createBall() {
   const speedX = 0; // Random horizontal speed
-  const speedY = 5; // Always start with the same upward speed
-  const newBall = new Ball(200, 100, 10, speedX, speedY, 'steel');
+  const speedY = 0.1; // Always start with the same upward speed
+  const newBall = new Ball(200, 500, 10, speedX, speedY, 'steel');
   ballsArray.push(newBall);
 }
 // Function to remove a ball from the array and create a new one
@@ -200,9 +219,8 @@ function removeBall(index) {
 }
 function reflectOffFlipper(ball, flipper) {
   console.log('Reflect function called');
-
+console.log(flipper);
   // Calculate the normal vector at the point of collision
-  // This normal assumes that the flipper is a flat surface
   let normal = {
     x: Math.cos((flipper.angle + 90) * Math.PI / 180), // Rotate by 90 degrees to get the perpendicular
     y: Math.sin((flipper.angle + 90) * Math.PI / 180)
@@ -212,7 +230,6 @@ function reflectOffFlipper(ball, flipper) {
   const dot = ball.speedX * normal.x + ball.speedY * normal.y;
 
   // Reflect the ball's velocity vector over the normal vector
-  // The new velocity is obtained by subtracting twice the dot product times the normal vector from the original velocity
   ball.speedX = ball.speedX - 2 * dot * normal.x;
   ball.speedY = ball.speedY - 2 * dot * normal.y;
 
@@ -220,10 +237,17 @@ function reflectOffFlipper(ball, flipper) {
   console.log(`ball speedX: ${ball.speedX}, ball speedY: ${ball.speedY}`);
 
   // Apply energy loss due to the collision
-  // The energy loss is simulated by reducing the speed by a certain percentage
   ball.speedX *= 0.90;
   ball.speedY *= 0.90;
+
+  // Eject the ball out of the flipper by moving it along the normal vector
+  /*const ejectDistance = ball.radius / 2; // Half the ball's radius to ensure it's out of collision
+  ball.x += normal.x * ejectDistance;
+  ball.y += normal.y * ejectDistance;*/
+
+  console.log(`ball speedX after energy loss: ${ball.speedX}, ball speedY after energy loss: ${ball.speedY}`);
 }
+
 
 function handleCollisions() {
   ballsArray.forEach((ball, index) => {
@@ -241,14 +265,14 @@ function handleCollisions() {
         return;
       }
 
-// You would call this function in your collision handling code
-if (invisibleFlipper.detectCollision(ball)) {
- 
-  // Determine the collision point ('trapezium' or 'circle')
-  let collisionPoint = 'trapezium'; // This is an example, you need to determine it based on your logic
-  reflectOffFlipper(ball, invisibleFlipper);
-
-}
+      if (invisibleFlipper.detectCollision(ball) && !ball.colliding) {
+        ctx.strokeStyle='red'
+        reflectOffFlipper(ball, invisibleFlipper);
+        ball.colliding = true; // Set the flag indicating that the ball is colliding
+      } else if (!invisibleFlipper.detectCollision(ball)) {
+        ball.colliding = false; // Clear the flag when the ball is not colliding
+      }
+      
     }
   });
 }
