@@ -30,66 +30,60 @@ let ballsArray = []; // Array to store all the balls
 
 // Class defining a flipper
 class Flipper {
-  constructor(x, y, length, width, angularSpeed, maxAngle, side) {
+  constructor(x, y, length, width, moveSpeed) {
     this.x = x;
     this.y = y;
     this.length = length;
     this.width = width;
-    this.angularSpeed = angularSpeed;
-    //this.angle = 30 
-    side === 'right' ? this.angle = -30 :  this.angle = 30;
-    this.maxAngle = maxAngle; // Maximum rotation angle
-    this.side = side;
-    
-    
+    this.moveSpeed = moveSpeed; // Speed at which the flipper will move horizontally
   }
 
-  // Method to update flipper's angle
+  // Method to update flipper's position
   update() {
-    if (this.side === 'left' && leftKeyIsPressed) {
-      this.angle = Math.max(this.angle - this.angularSpeed, -this.maxAngle);
-      console.log('Left Flipper Angle: ' + this.angle);
-    } else if (this.side === 'left') {
-      this.angle = Math.min(this.angle + this.angularSpeed, 30);
+    if (leftKeyIsPressed && this.x > 0) {
+      this.x = Math.max(this.x - this.moveSpeed, 0); // Move left
     }
-
-    if (this.side === 'right' && rightKeyIsPressed) {
-      this.angle = Math.min(this.angle + this.angularSpeed, -this.maxAngle);
-      console.log('Right Flipper Angle: ' + this.angle);
-    } else if (this.side === 'right') {
-      this.angle = Math.max(this.angle - this.angularSpeed, this.maxAngle);
+    if (rightKeyIsPressed && (this.x + this.length) < canvas.width) {
+      this.x = Math.min(this.x + this.moveSpeed, canvas.width - this.length); // Move right
     }
   }
-
 
   // Method to draw flipper on canvas
   draw() {
     ctx.save(); // Save the current context state
-    ctx.translate(this.x, this.y); // Set the origin to the flipper's pivot point
-    ctx.rotate(this.angle * Math.PI / 180); // Convert angle to radians and rotate
 
-    // Draw the main body of the flipper
+    // Draw the main body of the flipper as arcs and rectangles
     ctx.beginPath();
-    if (this.side === 'right') {
-      ctx.arc(0, 0, this.width / 2, Math.PI * 1.5, Math.PI * 0.5, false);
-      ctx.arc(-this.length, 0, this.width / 3, Math.PI * 0.5, Math.PI * 1.5, false);
-    } else {
-      ctx.arc(0, 0, this.width / 2, Math.PI * 1.5, Math.PI * 0.5, true);
-      ctx.arc(this.length, 0, this.width / 3, Math.PI * 0.5, Math.PI * 1.5, true);
-    }
-    ctx.closePath();
-
-    // Style and fill the flipper body
-    ctx.fillStyle = this.side === 'right' ? 'pink' : 'red';
-    ctx.fill();
+    ctx.fillStyle = 'red';
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 2;
+    
+    // Draw the left half-circle
+    ctx.arc(this.x, this.y, this.width / 2, Math.PI * 1.5, Math.PI * 0.5, true);
+    
+    // Draw the right half-circle
+    ctx.arc(this.x + this.length, this.y, this.width / 2, Math.PI * 0.5, Math.PI * 1.5, true);
+    
+    // Connect the half-circles with lines
+    ctx.lineTo(this.x, this.y - this.width / 2);
+    
+    ctx.closePath();
+    ctx.fill();
     ctx.stroke();
 
-    // Draw the pivot circle
-    ctx.beginPath();
-    ctx.arc(0, 0, this.width / 5, 0, Math.PI * 2);
+    // Draw the pivot circles
     ctx.fillStyle = 'white';
+    
+    // Pivot circle on the left
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.width / 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+    
+    // Pivot circle on the right
+    ctx.beginPath();
+    ctx.arc(this.x + this.length, this.y, this.width / 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     ctx.closePath();
@@ -98,9 +92,8 @@ class Flipper {
   }
 }
 
-// Instantiating the flippers with a maximum angle they can rotate
-const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 60, 30, 5, 30, 'left');
-const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 90, 60, 30, 5, -30, 'right');
+// Instantiating the horizontal flipper
+const horizontalFlipper = new Flipper(canvas.width / 2 - 30, canvas.height - 40, 60, 20, 5);
 
 
 // Class for the throwing mechanism
@@ -517,21 +510,6 @@ function handleCollisions() {
       ball.speedX *= -1;
     }
 
-    // Left flipper collision
-    if (ball.x > leftFlipper.x - leftFlipper.width / 2 - ball.radius &&
-      ball.x < leftFlipper.x + leftFlipper.width / 2 + ball.radius &&
-      ball.y > leftFlipper.y - leftFlipper.height / 2 - ball.radius &&
-      ball.y < leftFlipper.y + leftFlipper.height / 2 + ball.radius) {
-      ball.speedY *= -1; // Reflect the ball vertically
-    }
-
-    // Right flipper collision
-    if (ball.x > rightFlipper.x - rightFlipper.width / 2 - ball.radius &&
-      ball.x < rightFlipper.x + rightFlipper.width / 2 + ball.radius &&
-      ball.y > rightFlipper.y - rightFlipper.height / 2 - ball.radius &&
-      ball.y < rightFlipper.y + rightFlipper.height / 2 + ball.radius) {
-      ball.speedY *= -1; // Reflect the ball vertically
-    }
 
     //Check for collision between the ball and an obstacle
 obstacles.forEach(obstacle => {
@@ -702,11 +680,8 @@ if (downKeyIsPressed) {
 
   // Draw flippers after the balls
   
-  rightFlipper.draw();
-  leftFlipper.draw();
-
-  leftFlipper.update();
-  rightFlipper.update();
+  horizontalFlipper.draw();
+  horizontalFlipper.update();
     // Always draw the obstacles, even when paused
     obstacles.forEach(obstacle => {
       obstacle.draw();
