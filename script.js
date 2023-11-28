@@ -97,27 +97,43 @@ const horizontalFlipper = new Flipper(canvas.width / 2 - 30, canvas.height - 40,
 
 // Class defining the invisible parts of a flipper for collision detection
 class InvisibleFlipper {
-  constructor(x, y, height, width, moveSpeed) {
+  constructor(x, y, height, width, moveSpeed, form) {
     this.x = x;
     this.y = y;
-    this.height = height;
+    if (form === 'leftArc') {
+      this.r = height / 2;
+    } else {
+      this.height = height;
+    }
     this.width = width;
     this.moveSpeed = moveSpeed; // the current angle of the visible flipper
+    this.form = form;
   }
 
-  drawRectangle() {
+  draw() {
     ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = 'pink';
-    ctx.fillStyle = 'green';
-    ctx.lineWidth = 2;
-    ctx.rect(this.x , this.y, this.width, this.height); // Draw the rectangle
-    ctx.stroke();
-    ctx.fill();
+    if (this.form ==='rect') {
+      ctx.beginPath();
+      ctx.strokeStyle = 'red';
+      ctx.fillStyle = 'green';
+      ctx.lineWidth = 2;
+      ctx.rect(this.x , this.y, this.width, this.height); // Draw the rectangle
+      ctx.stroke();
+      //ctx.fill();
+    } else if (this.form === 'leftArc') {
+      ctx.beginPath();
+      ctx.strokeStyle = 'pink';
+      ctx.fillStyle = 'green';
+      ctx.lineWidth = 2;
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+
+      ctx.stroke();
+    } else if (this.form === 'rightArc') {
+
+    }
     ctx.restore();
   }
   
-
   // Method to update flipper's position
   update() {
     if (leftKeyIsPressed && this.x > 0 && !isPause) {
@@ -132,10 +148,15 @@ class InvisibleFlipper {
 
 
 }
+let invisibleFlipperArray = []; // Array to store all the invisible flippers
+const invisibleRectFlipper = new InvisibleFlipper(horizontalFlipper.x, horizontalFlipper.y-horizontalFlipper.width/2,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed,'rect');
+invisibleFlipperArray.push(invisibleRectFlipper);
 
-const invisibleFlipper = new InvisibleFlipper(canvas.width / 2 - 50, canvas.height - 50,  30, 100, 5);
+const invisibleLeftArcFlipper = new InvisibleFlipper(horizontalFlipper.x, horizontalFlipper.y,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed, 'leftArc');
 
+invisibleFlipperArray.push(invisibleLeftArcFlipper);
 
+console.log(invisibleRectFlipper);
 // Class for the throwing mechanism
 class ThrowingMechanism {
   constructor(x, y, width, height, stiffness = 0.3) { // Default stiffness value
@@ -362,8 +383,6 @@ function intersects(obstacle) {
   return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
 }
 
-
-
 // Function to create a new ball and add it to the balls array
 function createBall() {
   const speedX = 0; // Random horizontal speed
@@ -476,8 +495,14 @@ function throwingMech() {
 console.log(ballsArray);
 
 function reflect(ball, obstacle) {
+ 
+let normal
+if (obstacle.form=='leftArc' || obstacle.form=='rightArc') {
+  console.log('reflect');
+  normal = { x: ball.x - obstacle.x, y: ball.y - obstacle.y };
+} else {   normal = { x: ball.x - obstacle.originalX, y: ball.y - obstacle.originalY };}
   // Calculate the normal vector at the point of collision
-  const normal = { x: ball.x - obstacle.originalX, y: ball.y - obstacle.originalY };
+
   const normalLength = Math.sqrt(normal.x * normal.x + normal.y * normal.y);
   normal.x /= normalLength;
   normal.y /= normalLength;
@@ -490,8 +515,8 @@ function reflect(ball, obstacle) {
   ball.speedY = ball.speedY - 2 * dot * normal.y;
 
   // This would be the place to adjust ball's speed to simulate energy loss
-   ball.speedX *= 0.95; 
-   ball.speedY *= 0.95;
+   ball.speedX *= 0.99; 
+   ball.speedY *= 0.99;
 }
 
   function isColliding(circle, rectangle, lineWidth) {
@@ -508,17 +533,31 @@ function reflect(ball, obstacle) {
     return false;
   }
   
+  function isCollidingWithArc(ball, arc, lineWidth) {
+    let dx = arc.x - ball.x;
+    let dy = arc.y - ball.y;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+    const sumOfRadii = ball.radius + (arc.height / 2) + lineWidth;
+  
+    return distance <= sumOfRadii;
+  }
+
+  
   function reflectOffFlipper(ball, flipper) {
     // The normal vector for the top edge of a horizontal flipper would be straight up
+    if (flipper.form=='rect'){
+
+  
     const normal = { x: 0, y: -1 };
   
     // Calculate dot product of ball's velocity and the normal
     const dot = ball.speedX * normal.x + ball.speedY * normal.y;
-  
+  console.log(`ball's speed before bounce: ${ball.speedX}, ${ball.speedY}`);
     // Reflect the ball's velocity vector over the normal vector
     ball.speedX = ball.speedX - 2 * dot * normal.x;
     ball.speedY = ball.speedY - 2 * dot * normal.y;
-  
+    console.log(`ball's speed after bounce: ${ball.speedX}, ${ball.speedY}`);
+  }
     // This would be the place to adjust ball's speed to simulate energy loss
     //ball.speedX *= 0.95;
     //ball.speedY *= 0.95;
@@ -579,14 +618,14 @@ function handleCollisions() {
       (ball.x + ball.radius > W - borderWidth - throwingMechWidth && ball.speedX > 0)) {
       ball.speedX *= -1;
     }
-
+    const lineWidth = 2; // Example line width
 
     //Check for collision between the ball and an obstacle
 obstacles.forEach(obstacle => {
   let dx = obstacle.originalX - ball.x;
   let dy = obstacle.originalY - ball.y;
   let distance = Math.sqrt(dx * dx + dy * dy);
-  const sumOfRadii = ball.radius + obstacle.r + 2; //adding two because of the stroke
+  const sumOfRadii = ball.radius + obstacle.r + lineWidth; //adding two because of the stroke
 
   if (distance <= sumOfRadii) {
     // Collision detected
@@ -602,15 +641,34 @@ obstacles.forEach(obstacle => {
  
 });
 
-const lineWidth = 2; // Example line width
+/*
 // When checking collision
-if (isColliding(ball, invisibleFlipper, lineWidth)) {
-  // Adjust the ball's velocity based on the flipper's normal vector
-  reflectOffFlipper(ball, invisibleFlipper);
+invisibleFlipperArray.forEach(invisibleFlipper => {
+  
 
+  if (invisibleFlipper.form=='rect') {
+    if (isColliding(ball, invisibleFlipper, lineWidth)) {
+  // Adjust the ball's velocity based on the flipper's normal vector
+  console.log('enter rect');
+  reflectOffFlipper(ball, invisibleFlipper);
   // Adjust the ball position to sit on top of the flipper, considering the line width
   ball.y = invisibleFlipper.y - ball.radius - lineWidth;
-}
+  }} else if (invisibleFlipper.form=="leftArc") {
+    if (isCollidingWithArc(ball, invisibleFlipper, lineWidth)) {
+    console.log('enter leftArc');
+      reflect(ball, invisibleFlipper);
+  }}
+});
+*/
+// When checking collision
+ let dx = invisibleFlipperArray[1].x - ball.x;
+ let dy = invisibleFlipperArray[1].y - ball.y;
+ let distance = Math.sqrt(dx * dx + dy * dy);
+ const sumOfRadii = ball.radius + invisibleFlipperArray[1].r + lineWidth; //adding two because of the stroke
+ if (distance <= sumOfRadii) {
+  isPause=true;
+ }  
+
   
   });
 
@@ -758,11 +816,12 @@ if (downKeyIsPressed) {
 
   // Draw flippers after the balls
   
-  //horizontalFlipper.draw();
+ // horizontalFlipper.draw();
   //horizontalFlipper.update();
 
-  invisibleFlipper.drawRectangle();
-  invisibleFlipper.update();
+  //invisibleFlipperArray.forEach(flipper => {flipper.draw(); flipper.update()});
+invisibleFlipperArray[1].draw();
+  invisibleFlipperArray[1].update();
     // Always draw the obstacles, even when paused
     obstacles.forEach(obstacle => {
       obstacle.draw();
