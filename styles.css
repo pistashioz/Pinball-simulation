@@ -52,7 +52,7 @@ html, body {
   display: flex;
   align-items: flex-start;
   justify-content: space-around;
-  width: 60%;
+  width: 40%;
   height: 20%;
   flex-direction: row-reverse;
 }
@@ -63,12 +63,13 @@ html, body {
 }
 
 #canvasObs{
-  background-color: brown;
-  padding-left: 0;
-  padding-right: 0;
-  margin-left: 0px;
-  display: block;
+  background-color: rgba(22, 35, 149, 0.3);
+  backdrop-filter: blur(10px);
   margin-top: 120px;
+  border-radius: 10px;
+  border-style: outset;
+  border-width: 20px;
+  border-color: rgb(132, 98, 200);
 }
 #custom{
   width: 20%;
@@ -86,7 +87,7 @@ html, body {
   height: 180px;	
   background-color: #DB92AD;
   overflow: hidden;
-  border-radius: 5%;
+  border-radius: 10px;
   border-style: outset;
   border-width: 10px;
   border-color: rgb(233, 231, 208);

@@ -160,9 +160,9 @@ const obstacles = [
 ]
 //Array with obstacles' in the box values
 const obstaclesInBox = [
-  new ObstacleInBox(W / 2, H / 2, 25, 'purple'),
-  new ObstacleInBox(W / 2 + 100, H / 2 - 150, 25, 'yellow'),
-  new ObstacleInBox(W / 2 - 100, H / 2 - 150, 25, 'orange')
+  new ObstacleInBox(WObs / 2, HObs / 2, 25, 'purple'),
+  new ObstacleInBox(WObs / 2, HObs / 2 + 100, 25, 'yellow'),
+  new ObstacleInBox(WObs / 2, HObs / 2 - 100, 25, 'orange')
 ]
 
 
@@ -282,30 +282,54 @@ function setDraggable(e) {
     releaseFocus();
   }
 }
-
-function setDraggableBox(e) {
+function setClickable(e){
   let type = e.type;
-  if (type === "mousedown") {
-    isMouseDown = true;
-    moveInBox(e);
-  } else if (type === "mouseup") {
-    for (let i = 0; i < obstaclesInBox.length; i++) {
-      if (intersects(obstaclesInBox[i])) {
-        // Create a new Obstacle based on the properties of the focused obstacle in the box
-        const newObstacle = new Obstacle(obstaclesInBox[i].x * Math.random(), obstaclesInBox[i].y * Math.random(), 25, obstaclesInBox[i].color);
-        //Add the selected obstacle inside obstaces array
-        obstacles.push(newObstacle);
-        // Remove the obstacle from the obstaclesInBox array
-        obstaclesInBox.splice(i, 1);
-
-      }
-      console.log(obstacles)
-      //redraw canvas to show the new obstacle
-      draw()
-    }
-    isMouseDown = false;
-    releaseFocus();
+  if(type === 'click'){
+    handleClickBox(e)
   }
+}
+
+function handleClickBox(e){
+  getMousePositionBox(e);
+    // Check if an obstacle is clicked
+    for (var i = 0; i < obstaclesInBox.length; i++) {
+
+      if (intersects(obstaclesInBox[i])) {
+        // Handle the click on the obstacle
+        handleObstacleClick(i);
+        break;
+      }
+    }
+  
+    draw();
+}
+
+function handleObstacleClick(i){
+  grabObstacles.play();
+
+  // Handle the obstacle click here
+  if (obstaclesInBox[i].color === 'yellow') {
+    obstaclesInBox[i].x = W / 2 - 100;
+    obstaclesInBox[i].y = H / 2 + 50;
+  } else if (obstaclesInBox[i].color === 'purple') {
+    obstaclesInBox[i].x = W / 2 + 100;
+    obstaclesInBox[i].y = H / 2 + 50;
+  } else {
+    obstaclesInBox[i].x = W / 2;
+    obstaclesInBox[i].y = H / 2 + 100;
+  }
+
+  // Create a new Obstacle based on the properties of the focused obstacle in the box
+  const newObstacle = new Obstacle(obstaclesInBox[i].x, obstaclesInBox[i].y, 25, obstaclesInBox[i].color);
+
+  // Add the selected obstacle inside obstaces array
+  obstacles.push(newObstacle);
+
+  // Remove the obstacle from the obstaclesInBox array
+  obstaclesInBox.splice(i, 1);
+
+  // Redraw canvas to show the new obstacle
+  draw();
 }
 
 function releaseFocus(){
@@ -484,9 +508,8 @@ canvas.addEventListener("mousedown", setDraggable);
 canvas.addEventListener("mousemove", move);
 canvas.addEventListener("mouseup", setDraggable);
 
-canvasObs.addEventListener("mousedown", setDraggableBox);
+canvasObs.addEventListener("click", setClickable);
 canvasObs.addEventListener("mousemove", moveInBox);
-canvasObs.addEventListener("mouseup", setDraggableBox);
 
 window.addEventListener("mousemove", moveOutsideCanvas);
 window.addEventListener("mouseup", releaseOutsideCanvas);
