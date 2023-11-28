@@ -125,8 +125,7 @@ class InvisibleFlipper {
       ctx.strokeStyle = 'pink';
       ctx.fillStyle = 'green';
       ctx.lineWidth = 2;
-      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-
+      ctx.arc(this.x, this.y, this.r, 0 , Math.PI *2);
       ctx.stroke();
     } else if (this.form === 'rightArc') {
 
@@ -134,6 +133,16 @@ class InvisibleFlipper {
     ctx.restore();
   }
   
+  visualDebugging(arc, ball) {
+    let dx = arc.x - ball.x;
+    let dy = arc.y - ball.y;
+
+    ctx.beginPath();
+    ctx.moveTo(ball.x, ball.y+ball.radius);
+    ctx.lineTo(arc.x, arc.y - arc.r);
+    ctx.stroke();
+    ctx.closePath();
+  }
   // Method to update flipper's position
   update() {
     if (leftKeyIsPressed && this.x > 0 && !isPause) {
@@ -152,7 +161,7 @@ let invisibleFlipperArray = []; // Array to store all the invisible flippers
 const invisibleRectFlipper = new InvisibleFlipper(horizontalFlipper.x, horizontalFlipper.y-horizontalFlipper.width/2,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed,'rect');
 invisibleFlipperArray.push(invisibleRectFlipper);
 
-const invisibleLeftArcFlipper = new InvisibleFlipper(horizontalFlipper.x, horizontalFlipper.y,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed, 'leftArc');
+const invisibleLeftArcFlipper = new InvisibleFlipper(210, 320,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed, 'leftArc');
 
 invisibleFlipperArray.push(invisibleLeftArcFlipper);
 
@@ -532,15 +541,24 @@ if (obstacle.form=='leftArc' || obstacle.form=='rightArc') {
     }
     return false;
   }
-  
-  function isCollidingWithArc(ball, arc, lineWidth) {
+  function isCollidingWithArc(ball, arc) {
+    // Calculate the distance between the centers of the ball and the arc
     let dx = arc.x - ball.x;
     let dy = arc.y - ball.y;
     let distance = Math.sqrt(dx * dx + dy * dy);
-    const sumOfRadii = ball.radius + (arc.height / 2) + lineWidth;
-  
-    return distance <= sumOfRadii;
-  }
+
+    // Check for collision. Notice we don't add the lineWidth here.
+    if (distance <= ball.radius + arc.r) {
+        // Collision detected
+        isPause = true; // Set the isPause variable to true
+        return true;
+    } else {
+        // No collision detected, the ball can continue moving
+        isPause = false;
+        return false;
+    }
+}
+
 
   
   function reflectOffFlipper(ball, flipper) {
@@ -618,7 +636,7 @@ function handleCollisions() {
       (ball.x + ball.radius > W - borderWidth - throwingMechWidth && ball.speedX > 0)) {
       ball.speedX *= -1;
     }
-    const lineWidth = 2; // Example line width
+    let lineWidth = 2; // Example line width
 
     //Check for collision between the ball and an obstacle
 obstacles.forEach(obstacle => {
@@ -641,33 +659,58 @@ obstacles.forEach(obstacle => {
  
 });
 
-/*
+
 // When checking collision
-invisibleFlipperArray.forEach(invisibleFlipper => {
+ /* invisibleFlipperArray.forEach(invisibleFlipper => {
   
 
-  if (invisibleFlipper.form=='rect') {
+if (invisibleFlipper.form=='rect') {
     if (isColliding(ball, invisibleFlipper, lineWidth)) {
-  // Adjust the ball's velocity based on the flipper's normal vector
-  console.log('enter rect');
-  reflectOffFlipper(ball, invisibleFlipper);
-  // Adjust the ball position to sit on top of the flipper, considering the line width
-  ball.y = invisibleFlipper.y - ball.radius - lineWidth;
+    reflectOffFlipper(ball, invisibleFlipper);
+    ball.y = invisibleFlipper.y - ball.radius - lineWidth;
   }} else if (invisibleFlipper.form=="leftArc") {
     if (isCollidingWithArc(ball, invisibleFlipper, lineWidth)) {
     console.log('enter leftArc');
-      reflect(ball, invisibleFlipper);
+    isPause = true;
+      //reflect(ball, invisibleFlipper);
   }}
-});
-*/
+});*/
+// Assuming the line width is 2 for both ball and arc
+const speedX = ball.speedX;
+let nextX = ball.x + ball.speedX;
+let nextY = ball.y + ball.speedY;
+
+// Detect potential collision before moving the circle
+if (detectCollision(nextX, nextY, invisibleFlipperArray[1].x, invisibleFlipperArray[1].y, ball.radius, invisibleFlipperArray[1].r)) {
+  //isPause = true;
+  ball.speedY *= -1
+} else {
+  isPause = false; // Continue the game if no collision is detected
+}
+
+
+function detectCollision(x1, y1, x2, y2, size1, size2) {
+  let dx = x1 - x2;
+  let dy = y1 - y2;
+  let distance = Math.sqrt(dx * dx + dy * dy);
+
+  // Check the distance against the combined radii plus the padding
+  return distance < 25 ;
+}
+
+
+
+
+ //isCollidingWithArc(ball, invisibleFlipperArray[1], lineWidth)
+
 // When checking collision
- let dx = invisibleFlipperArray[1].x - ball.x;
+ /*let dx = invisibleFlipperArray[1].x - ball.x;
  let dy = invisibleFlipperArray[1].y - ball.y;
  let distance = Math.sqrt(dx * dx + dy * dy);
  const sumOfRadii = ball.radius + invisibleFlipperArray[1].r + lineWidth; //adding two because of the stroke
  if (distance <= sumOfRadii) {
   isPause=true;
- }  
+ }  */
 
   
   });
@@ -821,7 +864,8 @@ if (downKeyIsPressed) {
 
   //invisibleFlipperArray.forEach(flipper => {flipper.draw(); flipper.update()});
 invisibleFlipperArray[1].draw();
-  invisibleFlipperArray[1].update();
+invisibleFlipperArray[1].update();
+  //invisibleFlipperArray[1].visualDebugging(invisibleFlipperArray[1], ballsArray[0]);
     // Always draw the obstacles, even when paused
     obstacles.forEach(obstacle => {
       obstacle.draw();

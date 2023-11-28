@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Circles</title>
+<style>
+  canvas {
+    border: 1px solid #000;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+  
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let droppingCircle = {
+  x: canvas.width / 2,
+  y: 50,
+  size: 50,
+  dy: 5,
+  color: 'blue'
+};
+
+let goalkeeperCircle = {
+  x: canvas.width / 2,
+  y: canvas.height - 50,
+  size: 50,
+  speed: 10,
+  color: 'red'
+};
+
+let gamePaused = false;
+
+function drawCircle(circle) {
+  ctx.beginPath();
+  ctx.arc(circle.x, circle.y, circle.size, 0, Math.PI * 2);
+  ctx.fillStyle = circle.color;
+  ctx.fill();
+}
+
+function updateDroppingCircle() {
+  if (!gamePaused) {
+    droppingCircle.y += droppingCircle.dy;
+
+    // If the circle reaches the bottom, reset to top
+    if (droppingCircle.y + droppingCircle.size > canvas.height) {
+      droppingCircle.y = -droppingCircle.size;
+      droppingCircle.x = Math.random() * (canvas.width - droppingCircle.size * 2) + droppingCircle.size;
+    }
+  }
+}
+
+function detectCollision(c1, c2) {
+  let dx = c1.x - c2.x;
+  let dy = c1.y - c2.y;
+  let distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance < c1.size + c2.size) {
+    gamePaused = true;
+    c1.color = 'green';
+    c2.color = 'green';
+  }
+}
+
+function update() {
+  // Clear the entire canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Update the position of the dropping circle
+  updateDroppingCircle();
+
+  // Draw the circles
+  drawCircle(droppingCircle);
+  drawCircle(goalkeeperCircle);
+
+  // Check for collisions
+  if (!gamePaused) {
+    if (detectCollision(droppingCircle, goalkeeperCircle)) {
+      gamePaused = true;
+      droppingCircle.color = 'green';
+      goalkeeperCircle.color = 'green';
+    }
+  }
+
+  // Request to do this again ASAP
+  requestAnimationFrame(update);
+}
+
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'ArrowRight' && !gamePaused) {
+    goalkeeperCircle.x += goalkeeperCircle.speed;
+    if (goalkeeperCircle.x + goalkeeperCircle.size > canvas.width) {
+      goalkeeperCircle.x = canvas.width - goalkeeperCircle.size;
+    }
+  } else if (event.key === 'ArrowLeft' && !gamePaused) {
+    goalkeeperCircle.x -= goalkeeperCircle.speed;
+    if (goalkeeperCircle.x - goalkeeperCircle.size < 0) {
+      goalkeeperCircle.x = goalkeeperCircle.size;
+    }
+  }
+});
+
+update();
+
+</script>
+</body>
+</html>
