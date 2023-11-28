@@ -125,7 +125,7 @@ class InvisibleFlipper {
       ctx.strokeStyle = 'pink';
       ctx.fillStyle = 'green';
       ctx.lineWidth = 2;
-      ctx.arc(this.x, this.y, this.r, 0 , Math.PI *2);
+      ctx.arc(this.x, this.y, this.r, Math.PI/2 , 3*Math.PI/2); // Draw the left arc
       ctx.stroke();
     } else if (this.form === 'rightArc') {
 
@@ -161,7 +161,7 @@ let invisibleFlipperArray = []; // Array to store all the invisible flippers
 const invisibleRectFlipper = new InvisibleFlipper(horizontalFlipper.x, horizontalFlipper.y-horizontalFlipper.width/2,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed,'rect');
 invisibleFlipperArray.push(invisibleRectFlipper);
 
-const invisibleLeftArcFlipper = new InvisibleFlipper(210, 320,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed, 'leftArc');
+const invisibleLeftArcFlipper = new InvisibleFlipper(153, horizontalFlipper.y,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed, 'leftArc');
 
 invisibleFlipperArray.push(invisibleLeftArcFlipper);
 
@@ -676,14 +676,20 @@ if (invisibleFlipper.form=='rect') {
   }}
 });*/
 // Assuming the line width is 2 for both ball and arc
+
+
 const speedX = ball.speedX;
 let nextX = ball.x + ball.speedX;
 let nextY = ball.y + ball.speedY;
 
 // Detect potential collision before moving the circle
 if (detectCollision(nextX, nextY, invisibleFlipperArray[1].x, invisibleFlipperArray[1].y, ball.radius, invisibleFlipperArray[1].r)) {
-  //isPause = true;
-  ball.speedY *= -1
+console.log(invisibleFlipperArray[1]);
+  if (invisibleFlipperArray[1].x<148) { ball.y = invisibleFlipperArray[1].y - ball.radius*2 - lineWidth*2;};
+ if (invisibleFlipperArray[1].x>=148){ball.y = invisibleFlipperArray[1].y - ball.radius - lineWidth*2-4;}
+
+ isPause = true;
+//  ball.speedY *= -1
 } else {
   isPause = false; // Continue the game if no collision is detected
 }
@@ -693,9 +699,14 @@ function detectCollision(x1, y1, x2, y2, size1, size2) {
   let dx = x1 - x2;
   let dy = y1 - y2;
   let distance = Math.sqrt(dx * dx + dy * dy);
-
+let sumOfRadii
   // Check the distance against the combined radii plus the padding
-  return distance < 25 ;
+  if (invisibleFlipperArray[1].x>150 && invisibleFlipperArray[1].x<156) {
+    sumOfRadii = size1 + size2 + 4;
+  } else {
+    sumOfRadii = size1 + size2;
+  }
+  return distance < sumOfRadii;
 }
 
 
