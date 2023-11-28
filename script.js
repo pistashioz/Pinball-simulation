@@ -40,10 +40,10 @@ class Flipper {
 
   // Method to update flipper's position
   update() {
-    if (leftKeyIsPressed && this.x > 0) {
+    if (leftKeyIsPressed && this.x > 0 && !isPause) {
       this.x = Math.max(this.x - this.moveSpeed, 0); // Move left
     }
-    if (rightKeyIsPressed && (this.x + this.length) < canvas.width) {
+    if (rightKeyIsPressed && (this.x + this.length) < canvas.width  && !isPause) {
       this.x = Math.min(this.x + this.moveSpeed, canvas.width - this.length); // Move right
     }
   }
@@ -68,7 +68,7 @@ class Flipper {
     ctx.lineTo(this.x, this.y - this.width / 2);
     
     ctx.closePath();
-    ctx.fill();
+    //ctx.fill();
     ctx.stroke();
 
     // Draw the pivot circles
@@ -93,7 +93,47 @@ class Flipper {
 }
 
 // Instantiating the horizontal flipper
-const horizontalFlipper = new Flipper(canvas.width / 2 - 30, canvas.height - 40, 60, 20, 5);
+const horizontalFlipper = new Flipper(canvas.width / 2 - 30, canvas.height - 40, 60, 30, 5);
+
+// Class defining the invisible parts of a flipper for collision detection
+class InvisibleFlipper {
+  constructor(x, y, height, width, moveSpeed) {
+    this.x = x;
+    this.y = y;
+    this.height = height;
+    this.width = width;
+    this.moveSpeed = moveSpeed; // the current angle of the visible flipper
+  }
+
+  drawRectangle() {
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = 'pink';
+    ctx.fillStyle = 'green';
+    ctx.lineWidth = 2;
+    ctx.rect(this.x , this.y, this.width, this.height); // Draw the rectangle
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
+  }
+  
+
+  // Method to update flipper's position
+  update() {
+    if (leftKeyIsPressed && this.x > 0 && !isPause) {
+      this.x = Math.max(this.x - this.moveSpeed, 0); // Move left
+    }
+    if (rightKeyIsPressed && (this.x + this.width) < canvas.width  && !isPause) {
+      this.x = Math.min(this.x + this.moveSpeed, canvas.width - this.width); // Move right
+    }
+  }
+
+
+
+
+}
+
+const invisibleFlipper = new InvisibleFlipper(canvas.width / 2 - 50, canvas.height - 50,  30, 100, 5);
 
 
 // Class for the throwing mechanism
@@ -172,7 +212,7 @@ class Ball {
     this.speedY = speedY;
     this.material = material;
     this.onThrowingMechanism = false;
-    //this.inPlay = true;
+    this.inPlay = true;
     this.setPhysicalProperties(material);
   }
   
@@ -263,7 +303,7 @@ const obstacles = [
 // Function to check if the mouse position intersects with an obstacle
 function move(e) {
   if (!isPause || !isMouseDown) {
-    console.log(`Drag skipped - isPaused: ${isPause}, isMouseDown: ${isMouseDown}`);
+    //console.log(`Drag skipped - isPaused: ${isPause}, isMouseDown: ${isMouseDown}`);
     return;
   }
 
@@ -277,7 +317,7 @@ function move(e) {
     obstacle.originalX = newX;
     obstacle.originalY  = newY;
 
-    console.log(`Obstacle ${focused.key} moved to - X: ${newX}, Y: ${newY}`);
+    //console.log(`Obstacle ${focused.key} moved to - X: ${newX}, Y: ${newY}`);
     
   } else {
     for (let i = 0; i < obstacles.length; i++) {
@@ -454,6 +494,36 @@ function reflect(ball, obstacle) {
    ball.speedY *= 0.95;
 }
 
+  function isColliding(circle, rectangle, lineWidth) {
+    // Adjust the circle's radius to account for the stroke
+    const totalRadius = circle.radius + lineWidth ;
+    
+    // Check if the bottom of the circle is colliding with the top of the rectangle
+    if (circle.y + totalRadius >= rectangle.y + lineWidth  && // Bottom of circle is below the top of rectangle (considering stroke)
+        circle.y - totalRadius <= rectangle.y + rectangle.height && // Top of circle is above the bottom of rectangle
+        circle.x >= rectangle.x && // Left side of circle is after the left side of rectangle
+        circle.x <= rectangle.x + rectangle.width) { // Right side of circle is before the right side of rectangle
+      return true;
+    }
+    return false;
+  }
+  
+  function reflectOffFlipper(ball, flipper) {
+    // The normal vector for the top edge of a horizontal flipper would be straight up
+    const normal = { x: 0, y: -1 };
+  
+    // Calculate dot product of ball's velocity and the normal
+    const dot = ball.speedX * normal.x + ball.speedY * normal.y;
+  
+    // Reflect the ball's velocity vector over the normal vector
+    ball.speedX = ball.speedX - 2 * dot * normal.x;
+    ball.speedY = ball.speedY - 2 * dot * normal.y;
+  
+    // This would be the place to adjust ball's speed to simulate energy loss
+    //ball.speedX *= 0.95;
+    //ball.speedY *= 0.95;
+  }
+
 
 // Function to handle all ball collisions
 function handleCollisions() {
@@ -532,7 +602,15 @@ obstacles.forEach(obstacle => {
  
 });
 
+const lineWidth = 2; // Example line width
+// When checking collision
+if (isColliding(ball, invisibleFlipper, lineWidth)) {
+  // Adjust the ball's velocity based on the flipper's normal vector
+  reflectOffFlipper(ball, invisibleFlipper);
 
+  // Adjust the ball position to sit on top of the flipper, considering the line width
+  ball.y = invisibleFlipper.y - ball.radius - lineWidth;
+}
   
   });
 
@@ -680,8 +758,11 @@ if (downKeyIsPressed) {
 
   // Draw flippers after the balls
   
-  horizontalFlipper.draw();
-  horizontalFlipper.update();
+  //horizontalFlipper.draw();
+  //horizontalFlipper.update();
+
+  invisibleFlipper.drawRectangle();
+  invisibleFlipper.update();
     // Always draw the obstacles, even when paused
     obstacles.forEach(obstacle => {
       obstacle.draw();

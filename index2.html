@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canvas Ball and Goalkeeper</title>
+<style>
+  canvas {
+    border: 1px solid #000;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="400"></canvas>
+<script>
+// Get the canvas element and context
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Shape constructor functions
+function Circle(x, y, radius, color) {
+  this.x = x;
+  this.y = y;
+  this.radius = radius;
+  this.color = color;
+  this.dy = 5; // Vertical speed
+}
+
+function Rectangle(x, y, width, height, color) {
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this.height = height;
+  this.color = color;
+}
+
+// Draw methods for shapes
+Circle.prototype.draw = function() {
+  ctx.beginPath();
+  ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+  ctx.fillStyle = this.color;
+  ctx.fill();
+}
+
+Rectangle.prototype.draw = function() {
+  ctx.beginPath();
+  ctx.rect(this.x, this.y, this.width, this.height);
+  ctx.fillStyle = this.color;
+  ctx.fill();
+}
+
+// Detect collision between a circle and a rectangle
+function isColliding(circle, rectangle) {
+  const distX = Math.abs(circle.x - rectangle.x - rectangle.width / 2);
+  const distY = Math.abs(circle.y - rectangle.y - rectangle.height / 2);
+
+  if (distX > (rectangle.width / 2 + circle.radius)) { return false; }
+  if (distY > (rectangle.height / 2 + circle.radius)) { return false; }
+
+  if (distX <= (rectangle.width / 2)) { return true; }
+  if (distY <= (rectangle.height / 2)) { return true; }
+
+  const dx = distX - rectangle.width / 2;
+  const dy = distY - rectangle.height / 2;
+  return (dx * dx + dy * dy <= (circle.radius * circle.radius));
+}
+
+// Instantiate shapes
+const circle = new Circle(canvas.width / 2, 30, 20, 'blue');
+const rectangle = new Rectangle(canvas.width / 2 - 50, canvas.height - 40, 100, 20, 'green');
+
+// Animation loop
+function animate() {
+  requestAnimationFrame(animate);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Move the circle down
+  circle.y += circle.dy;
+
+  // Reflect the circle's trajectory if it collides with the rectangle or hits the bottom of the canvas
+  if (isColliding(circle, rectangle) || circle.y + circle.radius > canvas.height) {
+    circle.dy *= -1;
+  }
+
+  // Ensure the circle bounces back from the top of the canvas
+  if (circle.y - circle.radius < 0) {
+    circle.dy *= -1;
+  }
+
+  circle.draw();
+  rectangle.draw();
+}
+
+// Listen for arrow keys to move the rectangle (goalkeeper)
+window.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowLeft' && rectangle.x > 0) {
+    rectangle.x -= 10;
+  } else if (e.key === 'ArrowRight' && rectangle.x + rectangle.width < canvas.width) {
+    rectangle.x += 10;
+  }
+});
+
+animate(); // Start the animation loop
+
+</script>
+</body>
+</html>
