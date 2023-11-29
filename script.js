@@ -30,10 +30,12 @@ const WObs = canvasObs.width, HObs = canvasObs.height;
 
 let isMouseDown = false;
 let focused = { state: false, key: null };
+let isPause = false
 let pause = false
 let obstaclesInCanvas = []
 
 
+const MIDDLE_OFFSET =   W/2 +13;
 
 //sound effects
 const bounceSound = new Audio("assets/audio/jump.wav");
@@ -84,40 +86,44 @@ class Ball {
 }
 class Obstacle {
   constructor(x, y, r, color) {
+    this.originalX = x;
+    this.originalY = y;
     this.x = x;
     this.y = y;
     this.r = r;
-    this.color = color
-    this.shakeFrames = 5;
-    this.shakeMagnitude = 5; // Adjust the magnitude of the shake
+    this.color = color;
+    this.shakeFrames = 0; // No shake initially
+    this.shakeMagnitude = 2; // Shake by 4 pixels/units
+    this.shakeDirection = { x: 0, y: 0 };
   }
+
   draw() {
-    //Bigger circle
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
-      ctx.fillStyle = this.color; // Green color
-      ctx.fill();
-      ctx.closePath();
-  
-      //Smaller circle
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.r / 3, 0, 2 * Math.PI);
-      ctx.fillStyle = "#FFFFFF"; // Green color
-      ctx.fill();
-      ctx.closePath();  
-  
+    // Use the original position plus any temporary shake offset
+    let drawX = this.originalX + this.shakeDirection.x;
+    let drawY = this.originalY + this.shakeDirection.y;
+
+    // Draw the larger circle
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, this.r, 0, 2 * Math.PI);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+
+    // Draw the smaller circle
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, this.r / 3, 0, 2 * Math.PI);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+    ctx.closePath();
   }
 
-  //shake effect in obstacles
-  shake() {
-      if (this.shakeFrames > 0) {
-        // update  x and y coordinates with random values within a specified range
-        this.x += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
-        this.y += Math.random() * this.shakeMagnitude - this.shakeMagnitude / 2;
-        // decrease the number of remaining shake frames
-        this.shakeFrames--;
-    }
-
+  shake(dx, dy) {
+    if (this.shakeFrames > 0) {
+       this.shakeDirection.x = dx * this.shakeMagnitude;
+      this.shakeDirection.y = dy * this.shakeMagnitude;
+      this.shakeFrames--;
+    } 
   }
 }
 
@@ -153,11 +159,13 @@ const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50
 const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'assets/img/rightFlipper.svg');
 const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
 //Array with obstacles' values
+//Array with obstacles' values
 const obstacles = [
-  new Obstacle(W / 2 - 0.5, H / 2 - 50, 25, 'red'),
+  new Obstacle(MIDDLE_OFFSET, H / 2 - 50, 25, 'red'),
   new Obstacle(W / 2 + 100, H / 2 - 150, 25, 'blue'),
-  new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green')
-]
+  new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
+];
+
 //Array with obstacles' in the box values
 const obstaclesInBox = [
   new ObstacleInBox(WObs / 2, 30, 25, 'purple'),
@@ -167,122 +175,68 @@ const obstaclesInBox = [
 ]
 
 
-//Function to check for collision between the ball and an obstacle
-function checkBallObstacleCollision(ball, obstacle) {
-  //calculate the distance between the center of the ball and the center of the obstacle
-  const dx = ball.x - obstacle.x;
-  const dy = ball.y - obstacle.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-
-  //check if the distance is less than the sum of the ball and obstacle radius 
-  if (distance < ball.radius + obstacle.r) {
-    // Collision detected so we play a bounce sound
-    bounceSound.play();
-    //trigger a shaking effect on the obstacle
-    obstacle.shakeFrames = 10;
-    //the collision ocurred
-    return true;
-  }
-  //in case no collision was detected
-  return false;
-}
-function draw(){
-      //clear canvas
-      ctx.clearRect(0, 0, W, H);
-      leftFlipper.draw();
-      rightFlipper.draw();
-      //draw each obstacle in obstacles array
-      for (const obstacle of obstacles) {
-        obstacle.draw();
-      }
-}
-
-
-
-function moveInBox(e) {
-  //check if mouse btn is not pressed
-  if (!isMouseDown) {
-    return;
-  }
-  getMousePositionBox(e);
-
-  //check if an obstacle is focused for movement
-  if (focused.state) {
-    //update the focused obstacle's position to the mouse position
-    obstaclesInBox[focused.key].x = mousePosition.x;
-    obstaclesInBox[focused.key].y = mousePosition.y;
-
-    draw();
-    return;
-  }
-  //if no obstacle is focused
-  for (var i = 0; i < obstaclesInBox.length; i++) {
-    //check if mouse intersects with an obstacle
-    if (intersects(obstaclesInBox[i])) {
-      //play audio if intersection is detected and change focused state to true so we can store the index of the focused obstacle
-      grabObstacles.play()
-      focused.state = true;
-      focused.key = i;
-      //increase the size of the current obstacle to be perceived as we grabbed it
-      obstaclesInBox[i].r = 35;
-      break;
-    }
-  }
-
-  draw();
-}
-
-
-
-
+// Function to check if the mouse position intersects with an obstacle
 function move(e) {
-  //check if mouse btn is not pressed
-  if (!isMouseDown) {
+  if (!isPause || !isMouseDown) {
+    //console.log(`Drag skipped - isPaused: ${isPause}, isMouseDown: ${isMouseDown}`);
     return;
   }
+
   getMousePosition(e);
 
-  //check if an obstacle is focused for movement
   if (focused.state) {
-    //update the focused obstacle's position to the mouse position
-    obstacles[focused.key].x = mousePosition.x;
-    obstacles[focused.key].y = mousePosition.y;
+    const obstacle = obstacles[focused.key];
+    // Ensure the obstacle stays within the canvas borders
+    const newX = Math.max(26 + obstacle.r, Math.min(W - 20 - obstacle.r, mousePosition.x));
+    const newY = Math.max(0 + obstacle.r, Math.min(H - obstacle.r, mousePosition.y));
+    obstacle.originalX = newX;
+    obstacle.originalY  = newY;
 
-    draw();
-    return;
-  }
-  //if no obstacle is focused
-  for (var i = 0; i < obstacles.length; i++) {
-    //check if mouse intersects with an obstacle
-    if (intersects(obstacles[i])) {
-      //play audio if intersection is detected and change focused state to true so we can store the index of the focused obstacle
-      grabObstacles.play()
-      focused.state = true;
-      focused.key = i;
-      //increase the size of the current obstacle to be perceived as we grabbed it
-      obstacles[i].r = 35;
-      break;
+    //console.log(`Obstacle ${focused.key} moved to - X: ${newX}, Y: ${newY}`);
+    
+  } else {
+    for (let i = 0; i < obstacles.length; i++) {
+      if (intersects(obstacles[i])) {
+        focused.state = true;
+        focused.key = i;
+        obstacles[i].r *= 1.1; // Slightly increase the radius to indicate selection
+        console.log(`Obstacle ${i} focused`);
+        break;
+      }
     }
   }
-
-  draw();
 }
 
 function setDraggable(e) {
-  let type = e.type;
-  if (type === "mousedown") {
-    isMouseDown = true;
-    moveOutsideCanvas(e);
-  } else if (type === "mouseup") {
-    for (let i = 0; i < obstacles.length; i++) {
-      if (intersects(obstacles[i])) {
-        obstacles[i].r = 25;
-      }
+  isMouseDown = e.type === "mousedown";
+  console.log(`Mouse ${e.type} at - X: ${e.clientX}, Y: ${e.clientY}`);
+  if (!isMouseDown) {
+    if (focused.state) {
+      obstacles[focused.key].r /= 1.1; // Reset the radius
+      focused.state = false;
+      focused.key = null;
+      console.log(`Focus released`);
     }
-    isMouseDown = false;
-    releaseFocus();
   }
 }
+
+function getMousePosition(e) {
+  const rect = canvas.getBoundingClientRect();
+  mousePosition = {
+    x: Math.round(e.clientX - rect.left),
+    y: Math.round(e.clientY - rect.top)
+  };
+  console.log(`Mouse position - X: ${mousePosition.x}, Y: ${mousePosition.y}`);
+}
+
+function intersects(obstacle) {
+  // subtract the x, y coordinates from the mouse position to get coordinates 
+  // for the hotspot location and check against the area of the radius
+  const areaX = mousePosition.x - obstacle.originalX;
+  const areaY = mousePosition.y - obstacle.originalY;
+  return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
+}
+
 function setClickable(e){
   let type = e.type;
   if(type === 'click'){
@@ -341,15 +295,6 @@ function releaseFocus(){
   focused.state = false
 }
 
-function getMousePosition(e){
-  var rect = canvas.getBoundingClientRect();
-  //calculate mouse position relative to the canvas
-  mousePosition = {
-    x: Math.round(e.x - rect.left),
-    y: Math.round(e.y - rect.top)
-  }
-}
-
 function getMousePositionBox(e){
   var rect = canvasObs.getBoundingClientRect();
   //calculate mouse position relative to the canvas
@@ -358,16 +303,74 @@ function getMousePositionBox(e){
     y: Math.round(e.y - rect.top)
   }
 }
-function intersects(obstacle) {
-  // subtract the x, y coordinates from the mouse position to get coordinates 
-  // for the hotspot location and check against the area of the radius
-  var areaX = mousePosition.x - obstacle.x;
-  var areaY = mousePosition.y - obstacle.y;
-  //return true if x^2 + y^2 <= radius squared.
-  return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
+
+function moveInBox(e) {
 }
 
-draw();
+
+function reflect(ball, obstacle) {
+ 
+  let normal
+  
+    normal = { x: ball.x - obstacle.originalX, y: ball.y - obstacle.originalY };
+    // Calculate the normal vector at the point of collision
+  
+    const normalLength = Math.sqrt(normal.x * normal.x + normal.y * normal.y);
+    normal.x /= normalLength;
+    normal.y /= normalLength;
+  
+    // Calculate dot product of ball's velocity and the normal
+    const dot = ball.speedX * normal.x + ball.speedY * normal.y;
+  
+    // Reflect the ball's velocity vector over the normal vector
+    ball.speedX = ball.speedX - 2 * dot * normal.x;
+    ball.speedY = ball.speedY - 2 * dot * normal.y;
+  
+    // This would be the place to adjust ball's speed to simulate energy loss
+     ball.speedX *= 0.99; 
+     ball.speedY *= 0.99;
+  }
+   
+// Function to handle all ball collisions
+function handleCollisions() {
+  const borderWidth = 20 + ctx.lineWidth; // Including the line width in the border size
+  const borderWidthRight = 46 + ctx.lineWidth; // Including the line width in the border size
+  const throwingMechWidth = 58;
+
+
+     
+
+    let lineWidth = 2; // Example line width
+
+    //Check for collision between the ball and an obstacle
+obstacles.forEach(obstacle => {
+  let dx = obstacle.originalX - ball.x;
+  let dy = obstacle.originalY - ball.y;
+  let distance = Math.sqrt(dx * dx + dy * dy);
+  const sumOfRadii = ball.radius + obstacle.r + lineWidth; //adding two because of the stroke
+
+  if (distance <= sumOfRadii) {
+    // Collision detected
+    obstacle.shakeFrames = 10; // Shake for 5 frames, for example
+    const shakeDirectionX = dx / distance; // Normalized shake direction X
+    const shakeDirectionY = dy / distance; // Normalized shake direction Y
+    obstacle.shake(shakeDirectionX, shakeDirectionY);
+    reflect(ball, obstacle);
+  }else {
+    obstacle.shakeDirection.x = 0;
+    obstacle.shakeDirection.y = 0;
+  }
+ 
+});
+
+
+  
+  
+
+}
+
+
+
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctxObs.clearRect(0, 0, canvas.width, canvas.height);
@@ -377,7 +380,7 @@ function update() {
     //add limits to the ball!! 
     ball.y += ball.speedY;
 
-
+    handleCollisions();
     // Ball collisions with the canvas boundaries
     if (ball.x < ball.radius || ball.x > canvas.width - ball.radius) {
       
@@ -411,15 +414,6 @@ function update() {
       ball.speedY *= -1; // Reverse vertical direction
     }
 
-    for (const obstacle of obstacles) {
-      obstacle.shake();
-      if (checkBallObstacleCollision(ball, obstacle)) {
-        
-        // Reverse ball direction and apply shake effect on obstacle
-        ball.speedY *= -1; // Reverse vertical direction
-        //cambiar la posicion frame por frame
-      }
-    }
   }
 
   // Update the left flipper angle
@@ -440,9 +434,11 @@ function update() {
   ball.draw();
   leftFlipper.draw();
   rightFlipper.draw();
-  for (const obstacle of obstacles) {
+  obstacles.forEach(obstacle => {
     obstacle.draw();
-  }
+  }); 
+
+
   for (const obstacle of obstaclesInBox){
     obstacle.draw();
   }
