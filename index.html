@@ -9,21 +9,28 @@
 <body>
     
     <div class = 'background'></div>
-    <canvas id="canvas" width="400" height="600"></canvas>
-    
-    <div id = 'formGravity'>
-        <label for = 'gravity'>Gravity value</label>
-        <input type  = 'number' name = 'gravity' id= 'gravity'>
-        <input type = 'submit' value ='submit'>
+    <div id = 'simulatorCanvas'>
+   
+        <canvas id="canvas" width="400" height="600"></canvas>
+        <canvas id = 'canvasObs' width = '100' height="300"></canvas> 
     </div>
-    <div class="dropdown">
-        <button onclick="myFunction()" class="dropbtn">Ball Material</button>
-        <div id="myDropdown" class="dropdown-content">
-          <a href="#">Steel</a>
-          <a href="#">Wood</a>
-          <a href="#">Rubber</a>
+
+    <div id = 'custom'>
+        <div id = 'formGravity'>
+            <label for = 'gravity'>Gravity value</label>
+            <input type  = 'number' name = 'gravity' id= 'gravity' min = 0 max = 25>
+            <input type = 'submit' value ='submit'>
+        </div>
+        <div class="dropdown">
+            <button  class="dropbtn" onclick="showToggle()">Ball Material</button>
+            <div id="myDropdown" class="dropdown-content">
+              <a href="#">Steel</a>
+              <a href="#">Wood</a>
+              <a href="#">Rubber</a>
+            </div>
         </div>
     </div>
+
     
     <script src="script.js"></script>
   </body>
