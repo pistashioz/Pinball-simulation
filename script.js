@@ -21,6 +21,7 @@ let isPause = false;
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
+let flippersKeyPressed = false;
 let downKeyIsPressed = false;
 
 let ballsArray = []; // Array to store all the balls
@@ -42,27 +43,27 @@ class TwoFlipper {
   }
   // Method to update flipper's angle
   update() {
-    if (this.side === 'left' && leftKeyIsPressed) {
+    if (this.side === 'left' && flippersKeyPressed) {
       this.angle = Math.max(this.angle - this.angularSpeed, -this.maxAngle);
     } else if (this.side === 'left') {
-      this.angle = Math.min(this.angle + this.angularSpeed, 20);
+      this.angle = Math.min(this.angle + this.angularSpeed, 15);
     }
 
-    if (this.side === 'right' && rightKeyIsPressed) {
+    if (this.side === 'right' && flippersKeyPressed) {
         console.log('called right flipper');
       this.angle = Math.min(this.angle + this.angularSpeed, this.maxAngle);
     } else if (this.side === 'right') {
-      this.angle = Math.max(this.angle - this.angularSpeed, -20);
+      this.angle = Math.max(this.angle - this.angularSpeed, -15);
     }
   }
   // Method to draw flipper on canvas
   draw() {
+
+
     ctx.save(); // Save the current context state
   
     // Calculate the rotated end points of the flipper for debugging arcs
-    var cosAngle = Math.cos(this.angle * Math.PI / 180);
-    var sinAngle = Math.sin(this.angle * Math.PI / 180);
-  
+
     // Translate and rotate the canvas to draw the flipper
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle * Math.PI / 180);
@@ -88,32 +89,118 @@ class TwoFlipper {
     ctx.fillStyle = 'red';
     ctx.fill();
     ctx.closePath();
-  
-        // The endpoint is at the end of the flipper (red arc)
-        let endpointXX = pivotX + this.length;
-        let endpointYY = pivotY+this.height;
-        ctx.beginPath();
-        ctx.arc(endpointXX, endpointYY, 4, 0, Math.PI * 2);
-        ctx.fillStyle = 'purple';
-        ctx.fill();
-        ctx.closePath();
+
 
     // Draw the flipper
     ctx.beginPath();
     ctx.fillStyle = 'blue';
-    ctx.rect(pivotX, pivotY, this.length, this.height);
+    ctx.rect(-this.height/2, -this.height/2, this.length, this.height);
     ctx.stroke();
     ctx.closePath();
   
     ctx.restore();
+
+
   }
   
 }
 // Instantiating the flippers with a maximum angle they can rotate
-const leftFlipper = new TwoFlipper(canvas.width * 0.25, canvas.height - 90, 90, 30, 22, 10, 'left');
+const leftFlipper = new TwoFlipper(canvas.width * 0.25, canvas.height - 90, 90, 30, 25, 10, 'left');
 // Adjust the position for the right flipper
-const rightFlipper = new TwoFlipper(canvas.width * 0.65, canvas.height - 90, 90, 30, 22, 10, 'right');
+const rightFlipper = new TwoFlipper(canvas.width * 0.65, canvas.height - 90, 90, 30, 25, 10, 'right');
+function drawActualPositions(flipper) {
 
+  // Original top left corner coordinates relative to the pivot
+  let topLeftX = -flipper.height/2;
+      // If the flipper is on the right side, invert the x-coordinate
+  let topLeftY = -flipper.height/2;
+
+  // Convert angle to radians and calculate the cosine and sine
+  let angleInRadians = flipper.angle * Math.PI / 180; // Negative for inverse rotation
+  if (flipper.side === 'right') {
+    angleInRadians = -flipper.angle * Math.PI / 180;
+  }
+  let cosAngle = Math.cos(angleInRadians);
+  let sinAngle = Math.sin(angleInRadians);
+
+  // Apply the inverse rotation to get the coordinates in the untransformed space
+  let untransformedTopLeftX = cosAngle * topLeftX - sinAngle * topLeftY;
+  let untransformedTopLeftY = sinAngle * topLeftX + cosAngle * topLeftY;
+
+    // Calculate the position of the bottom corner relative to the pivot point
+    let bottomCornerX = flipper.length - flipper.height/2;
+    let bottomCornerY = flipper.height/2;
+  
+    // Apply the inverse rotation to get the coordinates in the untransformed space
+    let untransformedBottomCornerX = cosAngle * bottomCornerX - sinAngle * bottomCornerY;
+    let untransformedBottomCornerY = sinAngle * bottomCornerX + cosAngle * bottomCornerY;
+  
+
+  // If the flipper is on the right side, invert the x-coordinate
+  if (flipper.side === 'right') {
+    untransformedTopLeftX = -untransformedTopLeftX; // Invert the x-coordinate due to scale transformation
+    untransformedBottomCornerX = -untransformedBottomCornerX; // Invert the x-coordinate due to scale transformation
+  }
+  // Translate by the flipper's position to get the final position
+  let finalTopLeftX = flipper.x + untransformedTopLeftX;
+  let finalTopLeftY = flipper.y + untransformedTopLeftY;
+
+    // Translate back by the flipper's original position to get the final position
+    let finalBottomCornerX = flipper.x + untransformedBottomCornerX;
+    let finalBottomCornerY = flipper.y + untransformedBottomCornerY;
+  
+    // Draw the actual position of the bottom corner
+    ctx.beginPath();
+    ctx.arc(finalBottomCornerX, finalBottomCornerY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'red'; // Red for the new corner
+    ctx.fill();
+    ctx.closePath();
+
+  // Draw the actual position of the top left corner (pink circle)
+  ctx.beginPath();
+  ctx.arc(finalTopLeftX, finalTopLeftY, 4, 0, Math.PI * 2);
+  ctx.fillStyle = 'pink'; // Pink to differentiate from green
+  ctx.fill();
+  ctx.closePath();
+
+  // Reverse the transformation for the endpoint
+  // Translate the endpoint back by the pivot position
+  let translatedEndpointX = flipper.length-flipper.height/2;
+  let translatedEndpointY = -flipper.height/2;
+
+
+
+  let rotatedX = translatedEndpointX * cosAngle - translatedEndpointY * sinAngle;
+  let rotatedY = translatedEndpointX * sinAngle + translatedEndpointY * cosAngle;
+
+    // If the flipper is on the right side, invert the x-coordinate
+    if (flipper.side === 'right') {
+      rotatedX = -rotatedX; // Invert the x-coordinate due to scale transformation
+      angleInRadians = -flipper.angle * Math.PI / 180;
+         untransformedTopLeftX = -untransformedTopLeftX; // Invert the x-coordinate due to scale transformation
+    }
+
+  // Translate back by the original position
+  let finalX = flipper.x + rotatedX;
+  let finalY = flipper.y + rotatedY;
+// Apply the mirroring if the flipper is on the right side
+
+  ctx.beginPath();
+  ctx.arc(finalX, finalY, 4, 0, Math.PI * 2);
+  ctx.fillStyle = 'purple'; // Using purple to differentiate from red
+  ctx.fill();
+  ctx.closePath();
+
+  // Return the calculated positions including the new bottom corner
+  return {
+    topLeft: { x: finalTopLeftX, y: finalTopLeftY },
+    topRight: { x: finalX, y: finalY },
+    bottomCorner: { x: finalBottomCornerX, y: finalBottomCornerY } // Add this line to include the new corner
+  };
+}
+
+
+// Call this function for each flipper after they are drawn
 
 // Class defining the invisible parts of a flipper for collision detection
 class Flipper {
@@ -139,16 +226,6 @@ class Flipper {
     ctx.restore();
   }
   
-  visualDebugging(arc, ball) {
-    let dx = arc.x - ball.x;
-    let dy = arc.y - ball.y;
-
-    ctx.beginPath();
-    ctx.moveTo(ball.x, ball.y+ball.radius);
-    ctx.lineTo(arc.x, arc.y - arc.r);
-    ctx.stroke();
-    ctx.closePath();
-  }
   // Method to update flipper's position
   update() {
     if (leftKeyIsPressed && this.x > 0 && !isPause) {
@@ -568,54 +645,46 @@ function distToSegmentSquared(p, v, w) {
   t = Math.max(0, Math.min(1, t));
   return Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2);
 }
-
 function checkFlipperBallCollision(flipper, ball) {
-  // Calculate the rotated end points of the flipper
-  var cosAngle = Math.cos(flipper.angle * Math.PI / 180);
-  var sinAngle = Math.sin(flipper.angle * Math.PI / 180);
+  // Get the calculated flipper positions
+  var positions = drawActualPositions(flipper);
 
-  let flipperBaseX, flipperBaseY, flipperEndX, flipperEndY;
+  // Define line segments
+  let flipperTopEdge = { start: positions.topLeft, end: positions.topRight };
+  let flipperSideEdge = { start: positions.topRight, end: positions.bottomCorner };
 
-  if (flipper.side === 'left') {
-    // Left flipper base (pivot)
-    flipperBaseX = flipper.x - (flipper.height / 2) * sinAngle;
-    flipperBaseY = flipper.y + (flipper.height / 2) * cosAngle;
-    // Left flipper end
-    flipperEndX = flipperBaseX + flipper.length * cosAngle;
-    flipperEndY = flipperBaseY + flipper.length * sinAngle;
-  } else {
-    // Right flipper base (pivot), mirrored around the flipper's x axis
-    flipperBaseX = flipper.x + (flipper.height / 2) * sinAngle;
-    flipperBaseY = flipper.y - (flipper.height / 2) * cosAngle;
-    // Right flipper end
-    flipperEndX = flipperBaseX - flipper.length * cosAngle;
-    flipperEndY = flipperBaseY - flipper.length * sinAngle;
-  }
+  // Check collision with the top edge of the flipper
+  checkCollisionForLineSegment(ball, flipperTopEdge.start, flipperTopEdge.end);
 
-  let flipperEnd1 = { x: flipperBaseX, y: flipperBaseY };
-  let flipperEnd2 = { x: flipperEndX, y: flipperEndY };
+  // Check collision with the side edge of the flipper
+  checkCollisionForLineSegment(ball, flipperSideEdge.start, flipperSideEdge.end);
+}
 
-  // Check collision with each edge of the flipper
+function checkCollisionForLineSegment(ball, segmentStart, segmentEnd) {
   var ballPos = { x: ball.x, y: ball.y };
+  var distance = Math.sqrt(distToSegmentSquared(ballPos, segmentStart, segmentEnd));
 
-  var distance = Math.sqrt(distToSegmentSquared(ballPos, flipperEnd1, flipperEnd2));
   if (distance < ball.radius) {
-      // Calculate normal of the flipper's edge
-      var dx = flipperEnd2.x - flipperEnd1.x;
-      var dy = flipperEnd2.y - flipperEnd1.y;
-      var length = Math.sqrt(dx * dx + dy * dy);
-      var normal = { x: dy / length, y: -dx / length };
-
-      // Reflect ball's velocity over the normal
-      var dot = 2 * (ball.speedX * normal.x + ball.speedY * normal.y);
-      ball.speedX = ball.speedX - dot * normal.x;
-      ball.speedY = ball.speedY - dot * normal.y;
-
-      // Move the ball outside of the collision area along the normal
-      var overlap = ball.radius - distance;
-      ball.x += overlap * normal.x;
-      ball.y += overlap * normal.y;
+      handleFlipperCollision(ball, segmentStart, segmentEnd, distance);
   }
+}
+
+function handleFlipperCollision(ball, segmentStart, segmentEnd, distance) {
+  // Calculate normal of the flipper's edge
+  var dx = segmentEnd.x - segmentStart.x;
+  var dy = segmentEnd.y - segmentStart.y;
+  var length = Math.sqrt(dx * dx + dy * dy);
+  var normal = { x: dy / length, y: -dx / length };
+
+  // Reflect ball's velocity over the normal
+  var dot = 2 * (ball.speedX * normal.x + ball.speedY * normal.y);
+  ball.speedX = ball.speedX - dot * normal.x;
+  ball.speedY = ball.speedY - dot * normal.y;
+
+  // Move the ball outside of the collision area along the normal
+  var overlap = ball.radius - distance;
+  ball.x += overlap * normal.x;
+  ball.y += overlap * normal.y;
 }
 
 
@@ -695,12 +764,6 @@ obstacles.forEach(obstacle => {
   }
  
 });
-
-
- /* if (isColliding(ball, rectFlipper, lineWidth)) {
-  reflectOffFlipper(ball, rectFlipper);
-  ball.y = rectFlipper.y - ball.radius - lineWidth;
-}*/
 
         // Check collision with the left flipper
         checkFlipperBallCollision(leftFlipper, ball);
@@ -784,7 +847,7 @@ function update() {
 
   });
 
-
+  handleCollisions();
 
 
 
@@ -866,6 +929,10 @@ if (downKeyIsPressed) {
   rightFlipper.draw();
   rightFlipper.update();
   
+  drawActualPositions(leftFlipper);
+drawActualPositions(rightFlipper);
+
+
   //rectFlipper.draw();
   //rectFlipper.update();
 
@@ -873,7 +940,7 @@ if (downKeyIsPressed) {
       obstacle.draw();
     }); 
 
-    handleCollisions();
+
 
   requestAnimationFrame(update); // Keep the animation loop running
 }
@@ -881,7 +948,10 @@ if (downKeyIsPressed) {
 // Event listeners for key presses
 window.onload = () => {
   document.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowLeft") {
+    if (event.key === 'z' || event.key === 'Z') {
+      // Trigger the flipper action
+      flippersKeyPressed = true;
+    } else    if (event.key === "ArrowLeft") {
       leftKeyIsPressed = true;
     } else if (event.key === "ArrowRight") {
       rightKeyIsPressed = true;
@@ -903,7 +973,10 @@ window.onload = () => {
     }
   });
   document.addEventListener("keyup", (event) => {
-    if (event.key === "ArrowLeft") {
+    if (event.key === 'z' || event.key === 'Z') {
+      // Trigger the flipper action
+      flippersKeyPressed = false;
+    } else if (event.key === "ArrowLeft") {
       leftKeyIsPressed = false;
     } else if (event.key === "ArrowRight") {
       rightKeyIsPressed = false;
