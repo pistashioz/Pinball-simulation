@@ -160,9 +160,10 @@ const obstacles = [
 ]
 //Array with obstacles' in the box values
 const obstaclesInBox = [
-  new ObstacleInBox(WObs / 2, HObs / 2, 25, 'purple'),
-  new ObstacleInBox(WObs / 2, HObs / 2 + 100, 25, 'yellow'),
-  new ObstacleInBox(WObs / 2, HObs / 2 - 100, 25, 'orange')
+  new ObstacleInBox(WObs / 2, 30, 25, 'purple'),
+  new ObstacleInBox(WObs / 2, 100, 25, 'yellow'),
+  new ObstacleInBox(WObs / 2, 255, 25, 'orange'),
+  new ObstacleInBox(WObs / 2, 180, 25, 'brown')
 ]
 
 
@@ -308,15 +309,19 @@ function handleObstacleClick(i){
   grabObstacles.play();
 
   // Handle the obstacle click here
+  //define obstacles coordinates in canvas when clicked
   if (obstaclesInBox[i].color === 'yellow') {
     obstaclesInBox[i].x = W / 2 - 100;
-    obstaclesInBox[i].y = H / 2 + 50;
+    obstaclesInBox[i].y = H / 2 + 120;
   } else if (obstaclesInBox[i].color === 'purple') {
     obstaclesInBox[i].x = W / 2 + 100;
-    obstaclesInBox[i].y = H / 2 + 50;
+    obstaclesInBox[i].y = H / 2 + 120;
+  } else if (obstaclesInBox[i].color === 'brown') {
+    obstaclesInBox[i].x = W / 2 - 30;
+    obstaclesInBox[i].y = H / 2 + 175;
   } else {
-    obstaclesInBox[i].x = W / 2;
-    obstaclesInBox[i].y = H / 2 + 100;
+    obstaclesInBox[i].x = W / 2 + 40;
+    obstaclesInBox[i].y = H / 2 + 175;
   }
 
   // Create a new Obstacle based on the properties of the focused obstacle in the box
