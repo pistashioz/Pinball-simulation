@@ -154,7 +154,7 @@ const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, 
 const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
 //Array with obstacles' values
 const obstacles = [
-  new Obstacle(W / 2, H / 2 - 50, 25, 'red'),
+  new Obstacle(W / 2 - 0.5, H / 2 - 50, 25, 'red'),
   new Obstacle(W / 2 + 100, H / 2 - 150, 25, 'blue'),
   new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green')
 ]
