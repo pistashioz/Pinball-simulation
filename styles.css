@@ -47,7 +47,7 @@ html, body {
 #simulatorCanvas {
   margin-left: auto;
   z-index: 289;
-  margin-top: -640px;
+  margin-top: -660px;
   margin-right: 35%;
   display: flex;
   align-items: flex-start;
@@ -57,9 +57,18 @@ html, body {
   flex-direction: row-reverse;
 }
 
+
+
+
+
 #canvas {
-  background-color: #232323;
+  background: url('/assets/img/board2.svg');
+  background-repeat: no-repeat;
+  background-size: cover;
   display: block;
+  -webkit-box-shadow: inset 10px 10px 10px 4px rgba(0, 0, 0, .6);
+  box-shadow: inset 3px 7px 2px 5px rgba(0, 0, 0, .1);
+  border:20px groove #b7b7b7;
 }
 
 #canvasObs{

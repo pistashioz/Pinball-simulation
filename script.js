@@ -467,6 +467,7 @@ function releaseOutsideCanvas() {
 }
 
 function isMouseInsideCanvas() {
+  //Get every coordinate inside canvas
   return (
     mousePosition.x >= 0 &&
     mousePosition.x <= W &&
@@ -475,7 +476,7 @@ function isMouseInsideCanvas() {
   );
 }
 
-//pause with the space bar
+//Pause with the space bar
 
 document.addEventListener("keydown", (event) => {
   if (event.key === " ") {

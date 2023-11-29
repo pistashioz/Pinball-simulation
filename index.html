@@ -10,6 +10,7 @@
     
     <div class = 'background'></div>
     <div id = 'simulatorCanvas'>
+   
         <canvas id="canvas" width="400" height="600"></canvas>
         <canvas id = 'canvasObs' width = '100' height="300"></canvas> 
     </div>
@@ -17,7 +18,7 @@
     <div id = 'custom'>
         <div id = 'formGravity'>
             <label for = 'gravity'>Gravity value</label>
-            <input type  = 'number' name = 'gravity' id= 'gravity'>
+            <input type  = 'number' name = 'gravity' id= 'gravity' min = 0 max = 25>
             <input type = 'submit' value ='submit'>
         </div>
         <div class="dropdown">
