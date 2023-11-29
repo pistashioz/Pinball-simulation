@@ -23,16 +23,11 @@ window.onclick = function(event) {
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const W = canvas.width, H = canvas.height;
-//get the obstacle box canvas and context
-const canvasObs = document.getElementById('canvasObs');
-const ctxObs = canvasObs.getContext('2d')
-const WObs = canvasObs.width, HObs = canvasObs.height;
 
+let mousePosition = { x: 0, y: 0 };
 let isMouseDown = false;
 let focused = { state: false, key: null };
-let isPause = false
-let pause = false
-let obstaclesInCanvas = []
+let isPause = false;
 
 
 const MIDDLE_OFFSET =   W/2 +13;
@@ -127,89 +122,180 @@ class Obstacle {
   }
 }
 
-class ObstacleInBox{
-  constructor(x, y, r, color) {
-    this.x = x;
-    this.y = y;
-    this.r = r;
-    this.color = color
-    this.shakeFrames = 5;
-    this.shakeMagnitude = 5; // Adjust the magnitude of the shake
-  }
-  draw() {
-    //Bigger circle
-      ctxObs.beginPath();
-      ctxObs.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
-      ctxObs.fillStyle = this.color; // Green color
-      ctxObs.fill();
-      ctxObs.closePath();
-  
-      //Smaller circle
-      ctxObs.beginPath();
-      ctxObs.arc(this.x, this.y, this.r / 3, 0, 2 * Math.PI);
-      ctxObs.fillStyle = "#FFFFFF"; // Green color
-      ctxObs.fill();
-      ctxObs.closePath();  
-  
-  }
-}
-
-
 const leftFlipper = new Flipper(canvas.width * 0.35, canvas.height - 90, 120, 50, 10, 30, 'assets/img/leftFlipper.svg');
+
 const rightFlipper = new Flipper(canvas.width * 0.65, canvas.height - 95, -120, -50, 10, 30, 'assets/img/rightFlipper.svg');
+
 const ball = new Ball(canvas.width / 2, 30, 15, 10, 10);
-//Array with obstacles' values
-//Array with obstacles' values
+
 const obstacles = [
-  new Obstacle(MIDDLE_OFFSET, H / 2 - 50, 25, 'red'),
+  new Obstacle(W/2 , H / 2 - 50, 25, 'red'),
   new Obstacle(W / 2 + 100, H / 2 - 150, 25, 'blue'),
   new Obstacle(W / 2 - 100, H / 2 - 150, 25, 'green'),
 ];
 
-//Array with obstacles' in the box values
-const obstaclesInBox = [
-  new ObstacleInBox(WObs / 2, 30, 25, 'purple'),
-  new ObstacleInBox(WObs / 2, 100, 25, 'yellow'),
-  new ObstacleInBox(WObs / 2, 255, 25, 'orange'),
-  new ObstacleInBox(WObs / 2, 180, 25, 'brown')
-]
+canvas.addEventListener('contextmenu', function(event) {
+  event.preventDefault(); // Prevent the default context menu
+  getMousePosition(event); // Update the mouse position
+  // Check if right-click intersects with an obstacle
+  const obstacleToRemove = obstacles.findIndex(obstacle => intersects(obstacle));
+  if (obstacleToRemove !== -1) {
+    removeObstacleFromCanvas(obstacleToRemove, obstacles[obstacleToRemove].color);
+  }
+});
+// This handler will be responsible for starting the drag event
+function dragStartHandler(event) {
+  if (!isPause) {
+    alert("The game must be paused to move obstacles.");
+    event.preventDefault(); // Prevent dragging
+  } else {
+    event.dataTransfer.setData("text/plain", event.target.id);
+  }
+}
 
-
-// Function to check if the mouse position intersects with an obstacle
-function move(e) {
-  if (!isPause || !isMouseDown) {
-    //console.log(`Drag skipped - isPaused: ${isPause}, isMouseDown: ${isMouseDown}`);
-    return;
+function removeObstacleFromCanvas(index, obstacleColor) {
+  // Check if the obstacle exists
+  if (index < 0 || index >= obstacles.length || !isPause) {
+    alert ('Please pause the simulation to remove obstacles.');
+    return; // If the index is out of bounds, do nothing
   }
 
-  getMousePosition(e);
+  // Remove the obstacle from the canvas
+  obstacles.splice(index, 1);
 
+  // Add an obstacle image back to the DOM
+  const obstacleDiv = document.getElementById('obstacle-images');
+  const newObstacleImage = document.createElement('img');
+  newObstacleImage.src = `/assets/img/OBSTACLE_${obstacleColor}.png`; // Make sure the path matches the obstacle color
+  newObstacleImage.classList.add("draggable-obstacle");
+  newObstacleImage.id = 'obstacle-'+obstacleColor;
+  newObstacleImage.draggable = true;
+  newObstacleImage.addEventListener('dragstart', dragStartHandler); // Add the dragstart event listener
+  obstacleDiv.appendChild(newObstacleImage);
+
+  update(); // Redraw the canvas
+}
+
+
+
+// This function will update the draggability of obstacles based on isPause
+
+  const draggableObstacles = document.querySelectorAll('.draggable-obstacle');
+  draggableObstacles.forEach(obstacle => {
+
+      obstacle.addEventListener('dragstart', dragStartHandler);
+    
+  });
+
+
+// Existing dragover listener updated
+document.body.addEventListener('dragover', function(event) {
+  event.preventDefault(); // Necessary to allow a drop
+  event.dataTransfer.dropEffect = "move"; // Indicate the drop effect as "move"
+});
+
+// New dragenter listener added
+document.body.addEventListener('dragenter', function(event) {
+  event.preventDefault(); // Necessary to make the drop zone valid
+});
+document.body.addEventListener('drop', function(event) {
+  if (!isPause) {
+    alert("You can only add obstacles to the canvas while the game is paused.");
+    event.preventDefault(); // Prevent the default behavior
+    return;
+  }
+  event.preventDefault();
+  document.body.style.cursor = "default"; // Reset cursor after drop
+  var obstacleId = event.dataTransfer.getData("text");
+  
+  // Calculate the drop position relative to the canvas
+  var canvasRect = canvas.getBoundingClientRect();
+  var x = event.clientX - canvasRect.left;
+  var y = event.clientY - canvasRect.top;
+  
+  // Remove the corresponding obstacle image from the DOM
+  var obstacleImage = document.getElementById(obstacleId);
+  if (obstacleImage) {
+    obstacleImage.remove();
+  }
+
+  // Add the obstacle to the canvas at the drop position
+  addObstacleToCanvas(obstacleId, x, y);
+});
+
+// Function to add an obstacle to the canvas
+function addObstacleToCanvas(obstacleId, x, y) {
+  if (!isPause) {
+    alert("The game must be paused to move obstacles.");
+    // If the game is not paused, do nothing
+    return;
+  }
+  if (obstacles.length >= 5) {
+    alert("Maximum number of obstacles reached. Cannot add more.");
+    return;
+  } 
+  // Determine the color based on the obstacle ID
+  var color;
+  switch (obstacleId) {
+    case 'obstacle-red':
+      color = 'red';
+      break;
+    case 'obstacle-blue':
+      color = 'blue';
+      break;
+    case 'obstacle-green':
+      color = 'green';
+      break;
+    default:
+      color = 'unknown'; // Or any default color
+  }
+
+  // Create a new Obstacle object with the correct color and add it to your obstacles array
+  var newObstacle = new Obstacle(x, y, 25, color);
+  obstacles.push(newObstacle);
+}
+
+
+// Function to handle moving an obstacle
+function move(e) {
+  getMousePosition(e);
   if (focused.state) {
     const obstacle = obstacles[focused.key];
-    // Ensure the obstacle stays within the canvas borders
-    const newX = Math.max(26 + obstacle.r, Math.min(W - 20 - obstacle.r, mousePosition.x));
+    // Calculate new position within canvas borders
+    const newX = Math.max(obstacle.r, Math.min(W - obstacle.r, mousePosition.x));
     const newY = Math.max(0 + obstacle.r, Math.min(H - obstacle.r, mousePosition.y));
-    obstacle.originalX = newX;
-    obstacle.originalY  = newY;
 
-    //console.log(`Obstacle ${focused.key} moved to - X: ${newX}, Y: ${newY}`);
-    
-  } else {
-    for (let i = 0; i < obstacles.length; i++) {
-      if (intersects(obstacles[i])) {
-        focused.state = true;
-        focused.key = i;
-        obstacles[i].r *= 1.1; // Slightly increase the radius to indicate selection
-        console.log(`Obstacle ${i} focused`);
-        break;
-      }
+    // Check if the obstacle is within the draggable zone
+    if (newX - obstacle.r/2 < zoneX || newX + obstacle.r/2 > zoneX + zoneWidth ||
+        newY - obstacle.r/2 < zoneY || newY + obstacle.r/2 > zoneY + zoneHeight) {
+      //alert("Obstacles need to be placed within the designated zone.");
+
+      // Reset obstacle position to its original position
+      /*setInterval((
+
+      ) => {        obstacle.originalX = obstacle.x,
+        obstacle.originalY = obstacle.y}, 2000);*/
+        obstacle.originalX =  obstacle.originalX
+        obstacle.originalY =   obstacle.originalY 
+    } else {
+      // Update obstacle position
+      obstacle.originalX = newX;
+      obstacle.originalY = newY;
     }
   }
 }
 
+// Global variables for draggable zone boundaries
+const zoneX = 50;
+const zoneY = 50;
+const zoneWidth = canvas.width - 100;
+const zoneHeight = canvas.height - 200;
+
 function setDraggable(e) {
   isMouseDown = e.type === "mousedown";
+  
   console.log(`Mouse ${e.type} at - X: ${e.clientX}, Y: ${e.clientY}`);
+  
   if (!isMouseDown) {
     if (focused.state) {
       obstacles[focused.key].r /= 1.1; // Reset the radius
@@ -223,90 +309,17 @@ function setDraggable(e) {
 function getMousePosition(e) {
   const rect = canvas.getBoundingClientRect();
   mousePosition = {
-    x: Math.round(e.clientX - rect.left),
-    y: Math.round(e.clientY - rect.top)
+    x: e.clientX - rect.left - (parseInt(window.getComputedStyle(canvas).borderWidth) || 0),
+    y: e.clientY - rect.top - (parseInt(window.getComputedStyle(canvas).borderWidth) || 0)
   };
-  console.log(`Mouse position - X: ${mousePosition.x}, Y: ${mousePosition.y}`);
 }
 
 function intersects(obstacle) {
-  // subtract the x, y coordinates from the mouse position to get coordinates 
-  // for the hotspot location and check against the area of the radius
   const areaX = mousePosition.x - obstacle.originalX;
   const areaY = mousePosition.y - obstacle.originalY;
+  // Check if the right-click is within the obstacle's radius
   return areaX * areaX + areaY * areaY <= obstacle.r * obstacle.r;
 }
-
-function setClickable(e){
-  let type = e.type;
-  if(type === 'click'){
-    handleClickBox(e)
-  }
-}
-
-function handleClickBox(e){
-  getMousePositionBox(e);
-    // Check if an obstacle is clicked
-    for (var i = 0; i < obstaclesInBox.length; i++) {
-
-      if (intersects(obstaclesInBox[i])) {
-        // Handle the click on the obstacle
-        handleObstacleClick(i);
-        break;
-      }
-    }
-  
-    draw();
-}
-
-function handleObstacleClick(i){
-  grabObstacles.play();
-
-  // Handle the obstacle click here
-  //define obstacles coordinates in canvas when clicked
-  if (obstaclesInBox[i].color === 'yellow') {
-    obstaclesInBox[i].x = W / 2 - 100;
-    obstaclesInBox[i].y = H / 2 + 120;
-  } else if (obstaclesInBox[i].color === 'purple') {
-    obstaclesInBox[i].x = W / 2 + 100;
-    obstaclesInBox[i].y = H / 2 + 120;
-  } else if (obstaclesInBox[i].color === 'brown') {
-    obstaclesInBox[i].x = W / 2 - 30;
-    obstaclesInBox[i].y = H / 2 + 175;
-  } else {
-    obstaclesInBox[i].x = W / 2 + 40;
-    obstaclesInBox[i].y = H / 2 + 175;
-  }
-
-  // Create a new Obstacle based on the properties of the focused obstacle in the box
-  const newObstacle = new Obstacle(obstaclesInBox[i].x, obstaclesInBox[i].y, 25, obstaclesInBox[i].color);
-
-  // Add the selected obstacle inside obstaces array
-  obstacles.push(newObstacle);
-
-  // Remove the obstacle from the obstaclesInBox array
-  obstaclesInBox.splice(i, 1);
-
-  // Redraw canvas to show the new obstacle
-  draw();
-}
-
-function releaseFocus(){
-  focused.state = false
-}
-
-function getMousePositionBox(e){
-  var rect = canvasObs.getBoundingClientRect();
-  //calculate mouse position relative to the canvas
-  mousePosition = {
-    x: Math.round(e.x - rect.left),
-    y: Math.round(e.y - rect.top)
-  }
-}
-
-function moveInBox(e) {
-}
-
 
 function reflect(ball, obstacle) {
  
@@ -331,15 +344,44 @@ function reflect(ball, obstacle) {
      ball.speedY *= 0.99;
   }
    
+  // Function to reset the ball to its initial position and velocity
+function resetBall() {
+  // Reset ball properties
+  ball.x = canvas.width / 2;
+  ball.y = 30;
+  ball.speedX = 10; // Reset to initial horizontal speed
+  ball.speedY = 10; // Reset to initial vertical speed
+
+  // If there are any more properties that you want to reset, do it here
+}
+
 // Function to handle all ball collisions
 function handleCollisions() {
-  const borderWidth = 20 + ctx.lineWidth; // Including the line width in the border size
-  const borderWidthRight = 46 + ctx.lineWidth; // Including the line width in the border size
-  const throwingMechWidth = 58;
 
 
-     
+         // Top border collision
+    if (ball.y  < ball.radius && ball.speedY < 0) {
+      ball.speedY *= -1;
+    }
+  // Bottom border collision
+  if (ball.y + ball.radius > canvas.height && ball.speedY > 0) {
+   
+    isPause = false;
+    resetBall(); // Call the reset function instead of removeBall
+    return;
+  }
 
+  // Right border collision
+  if (ball.x + ball.radius > canvas.width && ball.speedX > 0) {
+    
+    ball.speedX *= -1;
+  }
+
+  // Left border collision
+  if (ball.x - ball.radius < 0 && ball.speedX < 0) {
+    
+    ball.speedX *= -1;
+  }
     let lineWidth = 2; // Example line width
 
     //Check for collision between the ball and an obstacle
@@ -364,33 +406,39 @@ obstacles.forEach(obstacle => {
 });
 
 
-  
-  
-
 }
 
+// Function to draw the draggable zone rectangle
+function drawDraggableZone() {
+  const zoneX = 50; // X-coordinate of the rectangle
+  const zoneY = 50; // Y-coordinate of the rectangle
+  const zoneWidth = canvas.width - 100; // Width of the rectangle
+  const zoneHeight = canvas.height - 200; // Height of the rectangle
 
+  ctx.save(); // Save the current state of the canvas
+  ctx.setLineDash([10, 5]); // Set dashed lines
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent black stroke
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'; // Semi-transparent white fill
+  ctx.rect(zoneX, zoneY, zoneWidth, zoneHeight);
+  ctx.fill(); // Fill the rectangle
+  ctx.stroke(); // Stroke the rectangle
+
+  ctx.restore(); // Restore the state of the canvas
+}
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctxObs.clearRect(0, 0, canvas.width, canvas.height);
-  if (!pause) {
+  if (isPause) {
+    drawDraggableZone(); // Draw the draggable zone when the game is paused
+}
+  if (!isPause) {
     // Update the x and y ball coordinates
     ball.x += ball.speedX;
-    //add limits to the ball!! 
+   
     ball.y += ball.speedY;
 
     handleCollisions();
-    // Ball collisions with the canvas boundaries
-    if (ball.x < ball.radius || ball.x > canvas.width - ball.radius) {
-      
-      ball.speedX *= -1;
-    }
 
-    if (ball.y < ball.radius) {
-    
-      ball.speedY *= -1;
-    }
 
     // Ball collision with the left flipper
     if (
@@ -399,7 +447,7 @@ function update() {
       ball.y > leftFlipper.y - ball.radius - leftFlipper.height / 2 &&
       ball.y < leftFlipper.y + ball.radius + leftFlipper.height / 2
     ) {
-      bounceFlippers.play();
+      //bounceFlippers.play();
       ball.speedY *= -1; // Reverse vertical direction
     }
 
@@ -410,7 +458,7 @@ function update() {
       ball.y > rightFlipper.y - ball.radius - rightFlipper.height / 2 &&
       ball.y < rightFlipper.y + ball.radius + rightFlipper.height / 2
     ) {
-      bounceFlippers.play()
+      //bounceFlippers.play()
       ball.speedY *= -1; // Reverse vertical direction
     }
 
@@ -439,81 +487,94 @@ function update() {
   }); 
 
 
-  for (const obstacle of obstaclesInBox){
-    obstacle.draw();
-  }
 
   requestAnimationFrame(update);
 }
 
-function moveOutsideCanvas(e) {
-  if (isMouseDown && focused.state) {
-    getMousePosition(e);
-    if (isMouseInsideCanvas()) {
-      obstacles[focused.key].x = mousePosition.x;
-      obstacles[focused.key].y = mousePosition.y;
-    }
-    draw();
-  }
-}
-
-function releaseOutsideCanvas() {
-  if (isMouseDown && focused.state) {
-    if (isMouseInsideCanvas()) {
-      obstacles[focused.key].r = 25;
-    }
-    isMouseDown = false;
-    releaseFocus();
-  }
-}
-
-function isMouseInsideCanvas() {
-  //Get every coordinate inside canvas
-  return (
-    mousePosition.x >= 0 &&
-    mousePosition.x <= W &&
-    mousePosition.y >= 0 &&
-    mousePosition.y <= H
-  );
-}
 
 //Pause with the space bar
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === " ") {
-    pause = !pause
-    event.preventDefault()
-  }
+document.getElementById('playButton').addEventListener('click', function() {
+  isPause = !isPause;
+  // Call this function to initially set the correct draggability state
+  this.textContent = isPause ? 'Pause' : 'Play'; // Change button text based on state
 });
-
 
 
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
+// Event listeners for key presses
+window.onload = () => {
+  document.addEventListener("keydown", (event) => {
+    if (event.key === 'z' || event.key === 'Z') {
+      // Trigger the flipper action
+      flippersKeyPressed = true;
+    } else    if (event.key === "ArrowLeft") {
+      leftKeyIsPressed = true;
+    } else if (event.key === "ArrowRight") {
+      rightKeyIsPressed = true;
+    } else if (event.key === "ArrowDown") {
+      // Only allow pressing down if no ball is currently moving on the mechanism
+      const canPressMechanism = ballsArray.every(ball =>
+        ball.onThrowingMechanism
+      );
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowLeft") {
-    leftKeyIsPressed = true;
-  } else if (event.key === "ArrowRight") {
-    rightKeyIsPressed = true;
+      if (canPressMechanism) {
+        downKeyIsPressed = true;
+        console.log('ArrowDown pressed');
+      } 
+    }
+    // if the event key is the space bar
+    else if (event.key === " ") {
+      isPause = !isPause
+      event.preventDefault()
+    }
+  });
+  document.addEventListener("keyup", (event) => {
+    if (event.key === 'z' || event.key === 'Z') {
+      // Trigger the flipper action
+      flippersKeyPressed = false;
+    } else if (event.key === "ArrowLeft") {
+      leftKeyIsPressed = false;
+    } else if (event.key === "ArrowRight") {
+      rightKeyIsPressed = false;
+    } else if (event.key === "ArrowDown") {
+      downKeyIsPressed = false;
+    };
+  });
+// Mousedown event listener
+canvas.addEventListener("mousedown", function(e) {
+  isMouseDown = true;
+  getMousePosition(e);
+  for (let i = 0; i < obstacles.length; i++) {
+      if (intersects(obstacles[i])) {
+          if (!isPause) {
+              alert("You can't move obstacles while the game is running.");
+              return;
+          }
+          focused.state = true;
+          focused.key = i;
+          obstacles[i].r *= 1.1; // Indicate selection
+          break;
+      }
+  }
+});
+ // Mousemove event listener
+canvas.addEventListener("mousemove", function(e) {
+  if (focused.state && isMouseDown) {
+      move(e);
+  }
+});
+// Mouseup event listener
+canvas.addEventListener("mouseup", function() {
+  isMouseDown = false;
+  if (focused.state) {
+      obstacles[focused.key].r /= 1.1; // Reset the radius
+      focused.state = false;
+      focused.key = null;
   }
 });
 
-document.addEventListener("keyup", (event) => {
-  if (event.key === "ArrowLeft") {
-    leftKeyIsPressed = false;
-  } else if (event.key === "ArrowRight") {
-    rightKeyIsPressed = false;
-  }
-});
-canvas.addEventListener("mousedown", setDraggable);
-canvas.addEventListener("mousemove", move);
-canvas.addEventListener("mouseup", setDraggable);
 
-canvasObs.addEventListener("click", setClickable);
-canvasObs.addEventListener("mousemove", moveInBox);
-
-window.addEventListener("mousemove", moveOutsideCanvas);
-window.addEventListener("mouseup", releaseOutsideCanvas);
-
-update();
+  update();
+};

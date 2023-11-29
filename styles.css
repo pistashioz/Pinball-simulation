@@ -17,21 +17,24 @@ p, h1, h2, h3, h4, h5, h6 {
 
 html, body {
   padding: 0;
-  background: url('/assets/img/bg.svg') no-repeat center center fixed;
+  background: url('/assets/img/bg.png') no-repeat center center fixed;
   background-size: cover; /* changed from cover to contain */
   font-weight: bold;
   color: rgb(75, 45, 136);
+  overflow-y: hidden;
   height: 100%; /* ensure the html and body are at least the height of the viewport */
 }
 
 
 .background {
-  background: url('/assets/img/elementos.svg') repeat-x 0 0;
+  background: url('/assets/img/elementos.png')  ;
+
+  background-size: cover; 
   width: 100%;
   text-align: center;
   height: 100%;
-  z-index: -1;
   box-sizing: border-box;
+  z-index: -2;
   animation: slide 120s linear infinite; /* Slower animation */
   will-change: background-position; /* Promote to own layer for smoother animation */
 }
@@ -58,49 +61,80 @@ html, body {
 }
 
   
-
-#simulatorCanvas {
-  margin-left: auto;
-  z-index: 289;
-  margin-top: -660px;
-  margin-right: 35%;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-around;
-  width: 40%;
-  height: 20%;
-  flex-direction: row-reverse;
-}
-
-
-
-
-
 #canvas {
   background: url('/assets/img/board2.png') no-repeat center center;
   background-size: cover;
   display: block;
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   -webkit-box-shadow: inset 10px 10px 10px 4px rgba(0, 0, 0, .6);
   box-shadow: inset 3px 7px 2px 5px rgba(0, 0, 0, .1);
   border:20px groove #b7b7b7;
-  z-index: 2;
+
 }
 
-#canvasObs{
-  background-color: rgba(22, 35, 149, 0.3);
-  backdrop-filter: blur(10px);
-  margin-top: 120px;
-  border-radius: 10px;
-  border-style: outset;
-  border-width: 10px;
-  border-color: rgb(132, 98, 200);
-}
+
 #custom{
   width: 20%;
   position: absolute;
   right: 15%;
   top: 10%;
+  z-index: 1;
 }
+
+.control-button {
+  font-weight: bold;
+  background-color: #b4be89;
+  color: rgb(52, 47, 47);
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  border: 3px solid;
+  border-style: outset;
+  border-width: 10px;
+  border-color: rgb(233, 231, 208);
+  transition: background-color 0.5s;
+  margin-top: 20px; /* Adjust as needed */
+  display: block; /* To make the button block level */
+  width: 50%; /* Adjust as needed */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.control-button:hover, .control-button:focus {
+  background-color: #8b9756;
+}
+#obstacle-images {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px; /* Adjust as needed */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+#obstacle1,
+ #obstacle2,
+ #obstacle3
+ {
+  cursor: grab;
+}
+
+#obstacle1:active,
+ #obstacle2:active,
+ #obstacle3:active
+ {
+  cursor: pointer;
+}
+
+
 #formGravity{
   display: block;
   margin-left: auto;
@@ -219,7 +253,7 @@ transition: background-color 0.5s;
   background-color: #ced5ac;
   min-width: 160px;
   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
+
 }
 
 /* Links inside the dropdown */

@@ -4,20 +4,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pinball Simulator</title>
     <link rel="stylesheet" type="text/css" href="styles.css" />
-    <link rel="preload" href="/assets/img/board2.png" as="image">
 
 </head>
 
 <body>
-    
-    <div class = 'background'></div>
-    <div id = 'simulatorCanvas'>
-   
+
         <canvas id="canvas" width="400" height="600"></canvas>
-        <canvas id = 'canvasObs' width = '100' height="300"></canvas> 
-    </div>
+        <div id="obstacle-images">
+            <img src="/assets/img/OBSTACLE_RED.png" id="obstacle-red" class="draggable-obstacle" draggable="true" />
+            <img src="/assets/img/OBSTACLE_BLUE.png" id="obstacle-blue" class="draggable-obstacle" draggable="true" />
+          
+          </div>
+          
+
+    <div class = 'background'></div>
+
 
     <div id = 'custom'>
+        <button id="playButton" class="control-button">Play</button>
+
         <div id = 'formGravity'>
             <label for = 'gravity'>Gravity value</label>
             <input type  = 'number' name = 'gravity' id= 'gravity' min = 0 max = 25>
