@@ -1,13 +1,13 @@
 //dropdown
 
 function showToggle() {
-  document.getElementById("myDropdown").classList.toggle("show");
+  document.getElementById('myDropdown').classList.toggle('show');
 }
 
 // Close the dropdown menu if the user clicks outside of it
 window.onclick = function(event) {
   if (!event.target.matches('.dropbtn')) {
-    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var dropdowns = document.getElementsByClassName('dropdown-content');
     var i;
     for (i = 0; i < dropdowns.length; i++) {
       var openDropdown = dropdowns[i];
@@ -20,8 +20,8 @@ window.onclick = function(event) {
 
 
 // get the pinball canvas and context
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 //get the obstacle box canvas and context
 const canvasObs = document.getElementById('canvasObs');
@@ -36,8 +36,8 @@ let obstaclesInCanvas = []
 
 
 //sound effects
-const bounceSound = new Audio("assets/audio/jump.wav");
-const bounceFlippers = new Audio("assets/audio/jumpFlipper.wav")
+const bounceSound = new Audio('assets/audio/jump.wav');
+const bounceFlippers = new Audio('assets/audio/jumpFlipper.wav')
 const grabObstacles = new Audio('assets/Audio/grab.wav')
 
 
@@ -77,7 +77,7 @@ class Ball {
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "#255f85"; // Blue color
+    ctx.fillStyle = '#255f85'; // Blue color
     ctx.fill();
     ctx.closePath();
   }
@@ -95,15 +95,22 @@ class Obstacle {
     //Bigger circle
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
-      ctx.fillStyle = this.color; // Green color
+      ctx.fillStyle = this.color; 
       ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'black';
+      ctx.stroke();
       ctx.closePath();
   
       //Smaller circle
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.r / 3, 0, 2 * Math.PI);
-      ctx.fillStyle = "#FFFFFF"; // Green color
-      ctx.fill();
+      ctx.fillStyle = '#FFFFFF'; 
+      ctx.fill();      
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'black';
+      ctx.stroke();
+
       ctx.closePath();  
   
   }
@@ -136,13 +143,19 @@ class ObstacleInBox{
       ctxObs.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
       ctxObs.fillStyle = this.color; // Green color
       ctxObs.fill();
+      ctxObs.lineWidth = 1;
+      ctxObs.strokeStyle = 'black';
+      ctxObs.stroke();
       ctxObs.closePath();
   
       //Smaller circle
       ctxObs.beginPath();
       ctxObs.arc(this.x, this.y, this.r / 3, 0, 2 * Math.PI);
-      ctxObs.fillStyle = "#FFFFFF"; // Green color
+      ctxObs.fillStyle = '#FFFFFF'; // Green color
       ctxObs.fill();
+      ctxObs.lineWidth = 1;
+      ctxObs.strokeStyle = 'black';
+      ctxObs.stroke();
       ctxObs.closePath();  
   
   }
@@ -197,7 +210,28 @@ function draw(){
       }
 }
 
+canvas.addEventListener('mousemove', changeCursorCanvas);
+canvasObs.addEventListener('mousemove', changeCursorCanvasObs)
+function changeCursorCanvas(e) {
+  getMousePosition(e);
 
+  // Check if the mouse is over any obstacle
+  if (obstacles.some(intersects)) {
+    canvas.style.cursor = 'pointer';
+  } 
+  else {
+    canvas.style.cursor = 'default';
+  }
+}
+function changeCursorCanvasObs(e){
+  getMousePositionBox(e)
+  if(obstaclesInBox.some(intersects)){
+    canvasObs.style.cursor = 'pointer';
+  }
+  else{
+    canvasObs.style.cursor = 'default';
+  }
+}
 
 function moveInBox(e) {
   //check if mouse btn is not pressed
@@ -270,10 +304,10 @@ function move(e) {
 
 function setDraggable(e) {
   let type = e.type;
-  if (type === "mousedown") {
+  if (type === 'mousedown') {
     isMouseDown = true;
     moveOutsideCanvas(e);
-  } else if (type === "mouseup") {
+  } else if (type === 'mouseup') {
     for (let i = 0; i < obstacles.length; i++) {
       if (intersects(obstacles[i])) {
         obstacles[i].r = 25;
@@ -300,6 +334,7 @@ function handleClickBox(e){
         handleObstacleClick(i);
         break;
       }
+      
     }
   
     draw();
@@ -341,6 +376,7 @@ function releaseFocus(){
   focused.state = false
 }
 
+let mousePosition = {x: 0, y: 0}
 function getMousePosition(e){
   var rect = canvas.getBoundingClientRect();
   //calculate mouse position relative to the canvas
@@ -483,8 +519,8 @@ function isMouseInsideCanvas() {
 
 //Pause with the space bar
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === " ") {
+document.addEventListener('keydown', (event) => {
+  if (event.key === ' ') {
     pause = !pause
     event.preventDefault()
   }
@@ -495,29 +531,29 @@ document.addEventListener("keydown", (event) => {
 let leftKeyIsPressed = false;
 let rightKeyIsPressed = false;
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowLeft") {
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'ArrowLeft') {
     leftKeyIsPressed = true;
-  } else if (event.key === "ArrowRight") {
+  } else if (event.key === 'ArrowRight') {
     rightKeyIsPressed = true;
   }
 });
 
-document.addEventListener("keyup", (event) => {
-  if (event.key === "ArrowLeft") {
+document.addEventListener('keyup', (event) => {
+  if (event.key === 'ArrowLeft') {
     leftKeyIsPressed = false;
-  } else if (event.key === "ArrowRight") {
+  } else if (event.key === 'ArrowRight') {
     rightKeyIsPressed = false;
   }
 });
-canvas.addEventListener("mousedown", setDraggable);
-canvas.addEventListener("mousemove", move);
-canvas.addEventListener("mouseup", setDraggable);
+canvas.addEventListener('mousedown', setDraggable);
+canvas.addEventListener('mousemove', move);
+canvas.addEventListener('mouseup', setDraggable);
 
-canvasObs.addEventListener("click", setClickable);
-canvasObs.addEventListener("mousemove", moveInBox);
+canvasObs.addEventListener('click', setClickable);
+canvasObs.addEventListener('mousemove', moveInBox);
 
-window.addEventListener("mousemove", moveOutsideCanvas);
-window.addEventListener("mouseup", releaseOutsideCanvas);
+window.addEventListener('mousemove', moveOutsideCanvas);
+window.addEventListener('mouseup', releaseOutsideCanvas);
 
 update();
