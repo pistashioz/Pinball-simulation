@@ -1,11 +1,86 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Canvas with Moveable Shapes</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <title>Pinball Game Simulation</title>
+    <style>
+        /* Centering the canvas on the screen */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
 </head>
 <body>
-    <canvas id="myCanvas"></canvas>
-    <script src="script4.js"></script>
+    <canvas id="gameCanvas" width="476" height="650"></canvas>
+
+    <script>
+        // Getting the canvas and context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Initial flipper positions and sizes
+        const flipperWidth = 100;
+        const flipperHeight = 20;
+        const leftFlipper = { x: 50 + flipperWidth / 2, y: 600, angle: 0 };
+        const rightFlipper = { x: 326 + flipperWidth / 2, y: 600, angle: 0 };
+
+        // Function to draw a flipper
+        function drawFlipper(flipper, isLeft) {
+            ctx.save(); // Save the current context state
+            ctx.translate(flipper.x, flipper.y); // Move to the flipper's location
+
+            // Setting pivot point for rotation
+            if (isLeft) {
+                ctx.rotate(flipper.angle * Math.PI / 180); // Rotate the left flipper
+                ctx.rect(-flipperWidth, -flipperHeight / 2, flipperWidth, flipperHeight); // Draw the left flipper
+            } else {
+                ctx.rotate(-flipper.angle * Math.PI / 180); // Rotate the right flipper
+                ctx.rect(0, -flipperHeight / 2, flipperWidth, flipperHeight); // Draw the right flipper
+            }
+
+            ctx.fillStyle = 'blue';
+            ctx.fill();
+            ctx.restore(); // Restore the context state
+        }
+
+        // Event listener for key presses
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                // Rotate left flipper
+                leftFlipper.angle = 45;
+            } else if (e.key === 'ArrowRight') {
+                // Rotate right flipper
+                rightFlipper.angle = 45;
+            }
+            drawFlippers();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') {
+                // Reset left flipper
+                leftFlipper.angle = 0;
+            } else if (e.key === 'ArrowRight') {
+                // Reset right flipper
+                rightFlipper.angle = 0;
+            }
+            drawFlippers();
+        });
+
+        // Function to draw both flippers
+        function drawFlippers() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+            drawFlipper(leftFlipper, true);
+            drawFlipper(rightFlipper, false);
+        }
+
+        // Initial drawing
+        drawFlippers();
+    </script>
 </body>
 </html>

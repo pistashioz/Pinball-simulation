@@ -229,6 +229,7 @@ class Flipper {
     ctx.rotate(this.angle * Math.PI / 180); // Convert angle to radians and rotate
     // Draw the main body of the flipper
     ctx.beginPath();
+    ctx.fillRect(-this.width / 2, -this.width / 2, this.length+30,this.width);
     ctx.arc(0, 0, this.width / 2, Math.PI * 1.5, Math.PI * 0.5, true);
     ctx.arc(this.length, 0, this.width / 3, Math.PI * 0.5, Math.PI * 1.5, true);
     ctx.closePath();

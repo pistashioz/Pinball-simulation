@@ -29,90 +29,105 @@ let ballsArray = []; // Array to store all the balls
 
 
 // Class defining a flipper
-class Flipper {
-  constructor(x, y, length, width, moveSpeed) {
+class TwoFlipper {
+  constructor(x, y, length, height, angularSpeed, maxAngle, side) {
     this.x = x;
     this.y = y;
     this.length = length;
-    this.width = width;
-    this.moveSpeed = moveSpeed; // Speed at which the flipper will move horizontally
+    this.height = height;
+    this.angularSpeed = angularSpeed;
+    this.angle = (side === 'left' ? 10 : -10);
+    this.maxAngle = maxAngle; // Maximum rotation angle
+    this.side = side;
   }
-
-  // Method to update flipper's position
+  // Method to update flipper's angle
   update() {
-    if (leftKeyIsPressed && this.x > 0 && !isPause) {
-      this.x = Math.max(this.x - this.moveSpeed, 0); // Move left
+    if (this.side === 'left' && leftKeyIsPressed) {
+      this.angle = Math.max(this.angle - this.angularSpeed, -this.maxAngle);
+    } else if (this.side === 'left') {
+      this.angle = Math.min(this.angle + this.angularSpeed, 20);
     }
-    if (rightKeyIsPressed && (this.x + this.length) < canvas.width  && !isPause) {
-      this.x = Math.min(this.x + this.moveSpeed, canvas.width - this.length); // Move right
+
+    if (this.side === 'right' && rightKeyIsPressed) {
+        console.log('called right flipper');
+      this.angle = Math.min(this.angle + this.angularSpeed, this.maxAngle);
+    } else if (this.side === 'right') {
+      this.angle = Math.max(this.angle - this.angularSpeed, -20);
     }
   }
-
   // Method to draw flipper on canvas
   draw() {
     ctx.save(); // Save the current context state
-
-    // Draw the main body of the flipper as arcs and rectangles
+  
+    // Calculate the rotated end points of the flipper for debugging arcs
+    var cosAngle = Math.cos(this.angle * Math.PI / 180);
+    var sinAngle = Math.sin(this.angle * Math.PI / 180);
+  
+    // Translate and rotate the canvas to draw the flipper
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle * Math.PI / 180);
+  
+    if (this.side === 'right') {
+      ctx.scale(-1, 1); // Mirror the flipper for the right side
+    }
+  
+    // The pivot point is at the center of the flipper's base (green arc)
+    let pivotX = -this.height / 2;
+    let pivotY = -this.height / 2;
     ctx.beginPath();
+    ctx.arc(pivotX, pivotY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'green';
+    ctx.fill();
+    ctx.closePath();
+  
+    // The endpoint is at the end of the flipper (red arc)
+    let endpointX = pivotX + this.length;
+    let endpointY = pivotY;
+    ctx.beginPath();
+    ctx.arc(endpointX, endpointY, 4, 0, Math.PI * 2);
     ctx.fillStyle = 'red';
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 2;
-    
-    // Draw the left half-circle
-    ctx.arc(this.x, this.y, this.width / 2, Math.PI * 1.5, Math.PI * 0.5, true);
-    
-    // Draw the right half-circle
-    ctx.arc(this.x + this.length, this.y, this.width / 2, Math.PI * 0.5, Math.PI * 1.5, true);
-    
-    // Connect the half-circles with lines
-    ctx.lineTo(this.x, this.y - this.width / 2);
-    
-    ctx.closePath();
-    //ctx.fill();
-    ctx.stroke();
-
-    // Draw the pivot circles
-    ctx.fillStyle = 'white';
-    
-    // Pivot circle on the left
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.width / 5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.stroke();
     ctx.closePath();
-    
-    // Pivot circle on the right
-    ctx.beginPath();
-    ctx.arc(this.x + this.length, this.y, this.width / 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.closePath();
+  
+        // The endpoint is at the end of the flipper (red arc)
+        let endpointXX = pivotX + this.length;
+        let endpointYY = pivotY+this.height;
+        ctx.beginPath();
+        ctx.arc(endpointXX, endpointYY, 4, 0, Math.PI * 2);
+        ctx.fillStyle = 'purple';
+        ctx.fill();
+        ctx.closePath();
 
-    ctx.restore(); // Restore the context to its original state
+    // Draw the flipper
+    ctx.beginPath();
+    ctx.fillStyle = 'blue';
+    ctx.rect(pivotX, pivotY, this.length, this.height);
+    ctx.stroke();
+    ctx.closePath();
+  
+    ctx.restore();
   }
+  
 }
+// Instantiating the flippers with a maximum angle they can rotate
+const leftFlipper = new TwoFlipper(canvas.width * 0.25, canvas.height - 90, 90, 30, 22, 10, 'left');
+// Adjust the position for the right flipper
+const rightFlipper = new TwoFlipper(canvas.width * 0.65, canvas.height - 90, 90, 30, 22, 10, 'right');
 
-// Instantiating the horizontal flipper
-const horizontalFlipper = new Flipper(canvas.width / 2 - 30, canvas.height - 40, 60, 30, 5);
 
 // Class defining the invisible parts of a flipper for collision detection
-class InvisibleFlipper {
-  constructor(x, y, height, width, moveSpeed, form) {
+class Flipper {
+  constructor(x, y, height, width, moveSpeed) {
     this.x = x;
     this.y = y;
-    if (form === 'leftArc') {
-      this.r = height / 2;
-    } else {
-      this.height = height;
-    }
+    this.height = height;
     this.width = width;
     this.moveSpeed = moveSpeed; // the current angle of the visible flipper
-    this.form = form;
   }
 
   draw() {
     ctx.save();
-    if (this.form ==='rect') {
+
       ctx.beginPath();
       ctx.strokeStyle = 'red';
       ctx.fillStyle = 'green';
@@ -120,16 +135,7 @@ class InvisibleFlipper {
       ctx.rect(this.x , this.y, this.width, this.height); // Draw the rectangle
       ctx.stroke();
       //ctx.fill();
-    } else if (this.form === 'leftArc') {
-      ctx.beginPath();
-      ctx.strokeStyle = 'pink';
-      ctx.fillStyle = 'green';
-      ctx.lineWidth = 2;
-      ctx.arc(this.x, this.y, this.r, Math.PI/2 , 3*Math.PI/2); // Draw the left arc
-      ctx.stroke();
-    } else if (this.form === 'rightArc') {
-
-    }
+   
     ctx.restore();
   }
   
@@ -157,15 +163,9 @@ class InvisibleFlipper {
 
 
 }
-let invisibleFlipperArray = []; // Array to store all the invisible flippers
-const invisibleRectFlipper = new InvisibleFlipper(horizontalFlipper.x, horizontalFlipper.y-horizontalFlipper.width/2,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed,'rect');
-invisibleFlipperArray.push(invisibleRectFlipper);
 
-const invisibleLeftArcFlipper = new InvisibleFlipper(153, horizontalFlipper.y,  horizontalFlipper.width, horizontalFlipper.length, horizontalFlipper.moveSpeed, 'leftArc');
+const rectFlipper = new Flipper(canvas.width / 2 - 30, canvas.height - 80,  40, 90, 5);
 
-invisibleFlipperArray.push(invisibleLeftArcFlipper);
-
-console.log(invisibleRectFlipper);
 // Class for the throwing mechanism
 class ThrowingMechanism {
   constructor(x, y, width, height, stiffness = 0.3) { // Default stiffness value
@@ -506,10 +506,8 @@ console.log(ballsArray);
 function reflect(ball, obstacle) {
  
 let normal
-if (obstacle.form=='leftArc' || obstacle.form=='rightArc') {
-  console.log('reflect');
-  normal = { x: ball.x - obstacle.x, y: ball.y - obstacle.y };
-} else {   normal = { x: ball.x - obstacle.originalX, y: ball.y - obstacle.originalY };}
+
+  normal = { x: ball.x - obstacle.originalX, y: ball.y - obstacle.originalY };
   // Calculate the normal vector at the point of collision
 
   const normalLength = Math.sqrt(normal.x * normal.x + normal.y * normal.y);
@@ -541,29 +539,10 @@ if (obstacle.form=='leftArc' || obstacle.form=='rightArc') {
     }
     return false;
   }
-  function isCollidingWithArc(ball, arc) {
-    // Calculate the distance between the centers of the ball and the arc
-    let dx = arc.x - ball.x;
-    let dy = arc.y - ball.y;
-    let distance = Math.sqrt(dx * dx + dy * dy);
-
-    // Check for collision. Notice we don't add the lineWidth here.
-    if (distance <= ball.radius + arc.r) {
-        // Collision detected
-        isPause = true; // Set the isPause variable to true
-        return true;
-    } else {
-        // No collision detected, the ball can continue moving
-        isPause = false;
-        return false;
-    }
-}
 
 
-  
   function reflectOffFlipper(ball, flipper) {
     // The normal vector for the top edge of a horizontal flipper would be straight up
-    if (flipper.form=='rect'){
 
   
     const normal = { x: 0, y: -1 };
@@ -575,11 +554,69 @@ if (obstacle.form=='leftArc' || obstacle.form=='rightArc') {
     ball.speedX = ball.speedX - 2 * dot * normal.x;
     ball.speedY = ball.speedY - 2 * dot * normal.y;
     console.log(`ball's speed after bounce: ${ball.speedX}, ${ball.speedY}`);
-  }
+  
     // This would be the place to adjust ball's speed to simulate energy loss
     //ball.speedX *= 0.95;
     //ball.speedY *= 0.95;
   }
+
+// Function to calculate the distance from a point to a line segment
+function distToSegmentSquared(p, v, w) {
+  var l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
+  if (l2 == 0) return Math.pow(p.x - v.x, 2) + Math.pow(p.y - v.y, 2);
+  var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2);
+}
+
+function checkFlipperBallCollision(flipper, ball) {
+  // Calculate the rotated end points of the flipper
+  var cosAngle = Math.cos(flipper.angle * Math.PI / 180);
+  var sinAngle = Math.sin(flipper.angle * Math.PI / 180);
+
+  let flipperBaseX, flipperBaseY, flipperEndX, flipperEndY;
+
+  if (flipper.side === 'left') {
+    // Left flipper base (pivot)
+    flipperBaseX = flipper.x - (flipper.height / 2) * sinAngle;
+    flipperBaseY = flipper.y + (flipper.height / 2) * cosAngle;
+    // Left flipper end
+    flipperEndX = flipperBaseX + flipper.length * cosAngle;
+    flipperEndY = flipperBaseY + flipper.length * sinAngle;
+  } else {
+    // Right flipper base (pivot), mirrored around the flipper's x axis
+    flipperBaseX = flipper.x + (flipper.height / 2) * sinAngle;
+    flipperBaseY = flipper.y - (flipper.height / 2) * cosAngle;
+    // Right flipper end
+    flipperEndX = flipperBaseX - flipper.length * cosAngle;
+    flipperEndY = flipperBaseY - flipper.length * sinAngle;
+  }
+
+  let flipperEnd1 = { x: flipperBaseX, y: flipperBaseY };
+  let flipperEnd2 = { x: flipperEndX, y: flipperEndY };
+
+  // Check collision with each edge of the flipper
+  var ballPos = { x: ball.x, y: ball.y };
+
+  var distance = Math.sqrt(distToSegmentSquared(ballPos, flipperEnd1, flipperEnd2));
+  if (distance < ball.radius) {
+      // Calculate normal of the flipper's edge
+      var dx = flipperEnd2.x - flipperEnd1.x;
+      var dy = flipperEnd2.y - flipperEnd1.y;
+      var length = Math.sqrt(dx * dx + dy * dy);
+      var normal = { x: dy / length, y: -dx / length };
+
+      // Reflect ball's velocity over the normal
+      var dot = 2 * (ball.speedX * normal.x + ball.speedY * normal.y);
+      ball.speedX = ball.speedX - dot * normal.x;
+      ball.speedY = ball.speedY - dot * normal.y;
+
+      // Move the ball outside of the collision area along the normal
+      var overlap = ball.radius - distance;
+      ball.x += overlap * normal.x;
+      ball.y += overlap * normal.y;
+  }
+}
 
 
 // Function to handle all ball collisions
@@ -660,68 +697,17 @@ obstacles.forEach(obstacle => {
 });
 
 
-// When checking collision
- /* invisibleFlipperArray.forEach(invisibleFlipper => {
+ /* if (isColliding(ball, rectFlipper, lineWidth)) {
+  reflectOffFlipper(ball, rectFlipper);
+  ball.y = rectFlipper.y - ball.radius - lineWidth;
+}*/
+
+        // Check collision with the left flipper
+        checkFlipperBallCollision(leftFlipper, ball);
   
+        // Check collision with the right flipper
+        checkFlipperBallCollision(rightFlipper, ball);
 
-if (invisibleFlipper.form=='rect') {
-    if (isColliding(ball, invisibleFlipper, lineWidth)) {
-    reflectOffFlipper(ball, invisibleFlipper);
-    ball.y = invisibleFlipper.y - ball.radius - lineWidth;
-  }} else if (invisibleFlipper.form=="leftArc") {
-    if (isCollidingWithArc(ball, invisibleFlipper, lineWidth)) {
-    console.log('enter leftArc');
-    isPause = true;
-      //reflect(ball, invisibleFlipper);
-  }}
-});*/
-// Assuming the line width is 2 for both ball and arc
-
-
-const speedX = ball.speedX;
-let nextX = ball.x + ball.speedX;
-let nextY = ball.y + ball.speedY;
-
-// Detect potential collision before moving the circle
-if (detectCollision(nextX, nextY, invisibleFlipperArray[1].x, invisibleFlipperArray[1].y, ball.radius, invisibleFlipperArray[1].r)) {
-console.log(invisibleFlipperArray[1]);
-  if (invisibleFlipperArray[1].x<148) { ball.y = invisibleFlipperArray[1].y - ball.radius*2 - lineWidth*2;};
- if (invisibleFlipperArray[1].x>=148){ball.y = invisibleFlipperArray[1].y - ball.radius - lineWidth*2-4;}
-
- isPause = true;
-//  ball.speedY *= -1
-} else {
-  isPause = false; // Continue the game if no collision is detected
-}
-
-
-function detectCollision(x1, y1, x2, y2, size1, size2) {
-  let dx = x1 - x2;
-  let dy = y1 - y2;
-  let distance = Math.sqrt(dx * dx + dy * dy);
-let sumOfRadii
-  // Check the distance against the combined radii plus the padding
-  if (invisibleFlipperArray[1].x>150 && invisibleFlipperArray[1].x<156) {
-    sumOfRadii = size1 + size2 + 4;
-  } else {
-    sumOfRadii = size1 + size2;
-  }
-  return distance < sumOfRadii;
-}
-
-
-
-
- //isCollidingWithArc(ball, invisibleFlipperArray[1], lineWidth)
-
-// When checking collision
- /*let dx = invisibleFlipperArray[1].x - ball.x;
- let dy = invisibleFlipperArray[1].y - ball.y;
- let distance = Math.sqrt(dx * dx + dy * dy);
- const sumOfRadii = ball.radius + invisibleFlipperArray[1].r + lineWidth; //adding two because of the stroke
- if (distance <= sumOfRadii) {
-  isPause=true;
- }  */
 
   
   });
@@ -799,7 +785,7 @@ function update() {
   });
 
 
-  handleCollisions();
+
 
 
 
@@ -873,16 +859,21 @@ if (downKeyIsPressed) {
  // horizontalFlipper.draw();
   //horizontalFlipper.update();
 
-  //invisibleFlipperArray.forEach(flipper => {flipper.draw(); flipper.update()});
-invisibleFlipperArray[1].draw();
-invisibleFlipperArray[1].update();
-  //invisibleFlipperArray[1].visualDebugging(invisibleFlipperArray[1], ballsArray[0]);
-    // Always draw the obstacles, even when paused
+    // Draw flippers after the balls
+    leftFlipper.draw();
+    leftFlipper.update();
+  
+  rightFlipper.draw();
+  rightFlipper.update();
+  
+  //rectFlipper.draw();
+  //rectFlipper.update();
+
     obstacles.forEach(obstacle => {
       obstacle.draw();
     }); 
 
-
+    handleCollisions();
 
   requestAnimationFrame(update); // Keep the animation loop running
 }
