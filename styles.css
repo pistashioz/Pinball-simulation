@@ -17,32 +17,47 @@ p, h1, h2, h3, h4, h5, h6 {
 
 html, body {
   padding: 0;
-  background: url('/assets/img/bg.svg');
-  background-repeat: no-repeat;
-  background-size: cover;
+  background: url('/assets/img/bg.svg') no-repeat center center fixed;
+  background-size: cover; /* changed from cover to contain */
   font-weight: bold;
-  color: rgb(75, 45, 136)
+  color: rgb(75, 45, 136);
+  height: 100%; /* ensure the html and body are at least the height of the viewport */
 }
 
+
 .background {
-  background: url('/assets/img/elementos.svg') repeat 0 0;
+  background: url('/assets/img/elementos.svg') repeat-x 0 0;
   width: 100%;
   text-align: center;
   height: 100%;
-  padding-top: 695px;
-  z-index: auto;
+  z-index: -1;
   box-sizing: border-box;
-  animation: slide 8s linear infinite;
+  animation: slide 120s linear infinite; /* Slower animation */
+  will-change: background-position; /* Promote to own layer for smoother animation */
 }
 
 @keyframes slide {
-  0% {
-    background-position: 0 0;
+  0%, 100% { 
+    background-position: 0 0; 
+    opacity: 1; 
   }
-  100% {
-      background-position: -512px -512px;
+  47% { 
+    opacity: 1; 
+  }
+  50% { 
+    background-position: 1920px 0; /* Halfway through the slide */
+    opacity: 0; /* quick fade out and in */
+  }
+  53% { 
+    opacity: 1; 
+  }
+  100% { 
+    background-position: 0 0; /* Completes the slide horizontally */
+    opacity: 1; 
   }
 }
+
+  
 
 #simulatorCanvas {
   margin-left: auto;
@@ -62,13 +77,13 @@ html, body {
 
 
 #canvas {
-  background: url('/assets/img/board2.svg');
-  background-repeat: no-repeat;
+  background: url('/assets/img/board2.png') no-repeat center center;
   background-size: cover;
   display: block;
   -webkit-box-shadow: inset 10px 10px 10px 4px rgba(0, 0, 0, .6);
   box-shadow: inset 3px 7px 2px 5px rgba(0, 0, 0, .1);
   border:20px groove #b7b7b7;
+  z-index: 2;
 }
 
 #canvasObs{
