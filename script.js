@@ -38,9 +38,9 @@ let obstaclesInCanvas = []
 //sound effects
 const bounceSound = new Audio('assets/audio/jump.wav');
 const bounceFlippers = new Audio('assets/audio/jumpFlipper.wav')
-const grabObstacles = new Audio('assets/Audio/grab.wav')
-
-
+const grabObstacles = new Audio('assets/Audio/drag.wav')
+const addObstacle = new Audio('assets/audio/click.wav')
+const releaseObstacle = new Audio('assets/audio/release.wav')
 //Classes 
 class Flipper {
   constructor(x, y, width, height, angularSpeed, maxAngle, imagePath) {
@@ -254,7 +254,6 @@ function moveInBox(e) {
     //check if mouse intersects with an obstacle
     if (intersects(obstaclesInBox[i])) {
       //play audio if intersection is detected and change focused state to true so we can store the index of the focused obstacle
-      grabObstacles.play()
       focused.state = true;
       focused.key = i;
       //increase the size of the current obstacle to be perceived as we grabbed it
@@ -314,6 +313,7 @@ function setDraggable(e) {
       }
     }
     isMouseDown = false;
+    releaseObstacle.play()
     releaseFocus();
   }
 }
@@ -331,6 +331,7 @@ function handleClickBox(e){
 
       if (intersects(obstaclesInBox[i])) {
         // Handle the click on the obstacle
+        addObstacle.play();
         handleObstacleClick(i);
         break;
       }
@@ -341,21 +342,20 @@ function handleClickBox(e){
 }
 
 function handleObstacleClick(i){
-  grabObstacles.play();
 
   // Handle the obstacle click here
   //define obstacles coordinates in canvas when clicked
   if (obstaclesInBox[i].color === 'yellow') {
-    obstaclesInBox[i].x = W / 2 - 100;
+    obstaclesInBox[i].x = W / 2 - 150;
     obstaclesInBox[i].y = H / 2 + 120;
   } else if (obstaclesInBox[i].color === 'purple') {
-    obstaclesInBox[i].x = W / 2 + 100;
+    obstaclesInBox[i].x = W / 2 + 150;
     obstaclesInBox[i].y = H / 2 + 120;
   } else if (obstaclesInBox[i].color === 'brown') {
-    obstaclesInBox[i].x = W / 2 - 30;
+    obstaclesInBox[i].x = W / 2 - 80;
     obstaclesInBox[i].y = H / 2 + 175;
   } else {
-    obstaclesInBox[i].x = W / 2 + 40;
+    obstaclesInBox[i].x = W / 2 + 60;
     obstaclesInBox[i].y = H / 2 + 175;
   }
 
@@ -373,6 +373,7 @@ function handleObstacleClick(i){
 }
 
 function releaseFocus(){
+  
   focused.state = false
 }
 
@@ -503,6 +504,7 @@ function releaseOutsideCanvas() {
       obstacles[focused.key].r = 25;
     }
     isMouseDown = false;
+    
     releaseFocus();
   }
 }
