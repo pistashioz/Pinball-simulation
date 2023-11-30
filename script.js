@@ -4,7 +4,7 @@ function showToggle() {
   if (isPause) {
     dropdown.classList.toggle("show");
   } else {
-    alert("The game must be paused to change the ball material.");
+    showMessage("The game must be paused to change the ball material.");
     // If the dropdown is shown, hide it and then blur the button
     if (dropdown.classList.contains('show')) {
       dropdown.classList.remove('show');
@@ -16,47 +16,7 @@ function showToggle() {
 
 
 
-// Close the dropdown menu if the user clicks outside of it
-window.onclick = function(event) {
-  if (!event.target.matches('.dropbtn')) {
-    var dropdowns = document.getElementsByClassName("dropdown-content");
-    var i;
-    for (i = 0; i < dropdowns.length; i++) {
-      var openDropdown = dropdowns[i];
-      if (openDropdown.classList.contains('show')) {
-        openDropdown.classList.remove('show');
-      }
-    }
-  }
-}
 
-document.getElementById('material-steel').addEventListener('click', function(e) {
-  e.preventDefault();
-  if (isPause) {
-    ball.setPhysicalProperties('steel');
-  } else {
-    alert('The game must be paused to change the ball material.');
-  }
-});
-
-
-document.getElementById('material-wood').addEventListener('click', function(e) {
-  e.preventDefault();
-  if (isPause) {
-    ball.setPhysicalProperties('wood');
-  } else {
-    alert('The game must be paused to change the ball material.');
-  }
-});
-
-document.getElementById('material-rubber').addEventListener('click', function(e) {
-  e.preventDefault();
-  if (isPause) {
-    ball.setPhysicalProperties('rubber');
-  } else {
-    alert('The game must be paused to change the ball material.');
-  }
-});
 
 
 // get the pinball canvas and context
@@ -72,13 +32,83 @@ let isPause = false;
 let flippersKeyPressed = false;
 let downKeyIsPressed = false;
 
-const GRAVITY = 0.35;
+let GRAVITY = 0.05;
 const BOUNCE_THRESHOLD = 2.5; // Minimum speed for bounce
 
 //sound effects
 const bounceSound = new Audio("assets/audio/jump.wav");
 const bounceFlippers = new Audio("assets/audio/jumpFlipper.wav")
 const grabObstacles = new Audio('assets/Audio/grab.wav')
+
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function(event) {
+  if (!event.target.matches('.dropbtn')) {
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
+
+// Function to handle material selection and storage
+function handleMaterialChange(material) {
+  if (isPause) {
+    localStorage.setItem('ballMaterial', material); // Store the material in local storage
+    location.reload(); // Refresh the page
+  } else {
+    showMessage('The game must be paused to change the ball material.');
+  }
+}
+
+function showMessage(text) {
+  var messageContainer = document.getElementById('messageContainer');
+  messageContainer.textContent = text; // Set the text
+  messageContainer.style.display = 'block'; // Make the container visible
+  messageContainer.style.animation = 'popIn 0.5s ease forwards'; // Apply the pop-in animation
+
+  // After 5 seconds, start the pop-out animation
+  setTimeout(function() {
+    messageContainer.style.animation = 'popOut 0.5s ease forwards';
+  }, 4500);
+
+  // Finally, hide the container after the pop-out animation completes
+  setTimeout(function() {
+    messageContainer.style.display = 'none'; // Hide the container
+    messageContainer.textContent = ''; // Clear the text
+  }, 5000); // Wait for the pop-out animation to finish
+}
+document.getElementById('material-steel').addEventListener('click', function(e) {
+  e.preventDefault();
+  handleMaterialChange('steel');
+});
+
+document.getElementById('material-wood').addEventListener('click', function(e) {
+  e.preventDefault();
+  handleMaterialChange('wood');
+});
+
+document.getElementById('material-rubber').addEventListener('click', function(e) {
+  e.preventDefault();
+  handleMaterialChange('rubber');
+});
+
+document.getElementById('submitGravity').addEventListener('click', function(e) {
+  e.preventDefault();
+  if (isPause) {
+      const selectedGravity = document.getElementById('gravity').value;
+      localStorage.setItem('selectedGravity', selectedGravity); // Store the gravity value in local storage
+      GRAVITY = parseFloat(selectedGravity); // Update the gravity constant
+      location.reload(); // Refresh the page
+  } else {
+    showMessage('The game must be paused to change gravity.');
+  }
+});
+
+
 
 class Flipper {
     constructor(x, y, height, width, moveSpeed) {
@@ -193,9 +223,9 @@ class TwoFlipper {
   
 }
 // Instantiating the flippers with a maximum angle they can rotate
-const leftFlipper = new TwoFlipper(canvas.width * 0.22, canvas.height - 90, 110, 20, 25, 10, 'left');
+const leftFlipper = new TwoFlipper(canvas.width * 0.13, canvas.height - 90, 120, 20, 25, 10, 'left');
 // Adjust the position for the right flipper
-const rightFlipper = new TwoFlipper(canvas.width * 0.77, canvas.height - 90, 110, 20, 25, 10, 'right');
+const rightFlipper = new TwoFlipper(canvas.width * 0.77, canvas.height - 90, 120, 20, 25, 10, 'right');
 function drawActualPositions(flipper) {
 
   // Original top left corner coordinates relative to the pivot
@@ -292,6 +322,8 @@ class Ball {
   constructor(x, y, radius, speedX, speedY, material) {
     this.x = x;
     this.y = y;
+    this.originalSpeedX = speedX;
+    this.originalSpeedY = speedY;
     this.radius = radius;
     this.speedX = speedX;
     this.speedY = speedY;
@@ -324,6 +356,20 @@ class Ball {
         this.restitution = 0.4;
     }
   }
+
+    // Method to pause the ball's movement
+    pause() {
+      this.originalSpeedX = this.speedX;
+      this.originalSpeedY = this.speedY;
+      this.speedX = 0;
+      this.speedY = 0;
+    }
+  
+    // Method to resume the ball's movement
+    resume() {
+      this.speedX = this.originalSpeedX;
+      this.speedY = this.originalSpeedY;
+    }
 
   // Method to draw the ball on the canvas
   draw() {
@@ -428,38 +474,7 @@ class ThrowingMechanism {
     ctx.stroke();
     ctx.closePath();
 
-    /*ctx.beginPath();
   
-    ctx.ellipse(100, 100, 5, 15, Math.PI /2, 0,  Math.PI, true);
-    ctx.lineWidth=2;
-    ctx.stroke();
-    
-
-    ctx.beginPath();
-    ctx.ellipse(100, 110, 5, 15, Math.PI /2, 0,  Math.PI, false);
-
-    ctx.lineWidth=2;
-    ctx.stroke();*/
-    let value = 16;
-    //A loop to draw 10 ellipses on the canvas
-    for (let i = 0; i < 1; i++) {
-    
-      let clockwise = true;
-      if (i % 2 !== 0) {
-        clockwise = false
-      }
-
-      ctx.beginPath();
-      ctx.ellipse(this.x+18, this.y + value, 5, 15, Math.PI /2, 0.40,  3.5, clockwise);
-
-      ctx.lineWidth=2;
-      ctx.stroke();
-      ctx.closePath();
-
-      // Increment the value by 5 each time
-      value += 10;
-  
-    }
 
     ctx.restore();
   };
@@ -467,18 +482,52 @@ class ThrowingMechanism {
 
 
 const throwingMechanism = new ThrowingMechanism(W - 37, H - 220, 37, 100);
-const ball = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 120, 10, 0, 5);
-//const ball = new Ball(13, 100, 10, -5, 1, 'steel');
+const ball = new Ball(throwingMechanism.x + throwingMechanism.width / 2, throwingMechanism.y - 120, 15, 0, 2, 'rubber');
+//const ball =  new Ball(canvas.width / 2, 30, 15, 1, 1);
 
+// Global flag to indicate whether to draw the door
+let shouldDrawDoor = false;
+// Define the door's dimensions and position
+const doorX = W - 139 + 51;
+const doorY = 0;
+const doorWidth = 6;
+const doorHeight = 64;
 function drawDoor() {
-console.log('called');
-  ctx.save(); // Save the current state of the canvas
-  ctx.beginPath();
-  ctx.rect(W - 139+51, 0, 6, 68);
-  ctx.fill();
-  ctx.closePath();
-  ctx.restore(); // Restore the state of the canvas
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.fillStyle = '#FF0000';
+    ctx.rect(doorX, doorY, doorWidth, doorHeight);
+    ctx.fill();
+    ctx.closePath();
+    ctx.restore();
 }
+// The center of the arc, radius, and angles
+const arcCenterX = W - 139;
+const arcCenterY = 150;
+const radius = 100;
+const startAngle = 0;
+const endAngle = -1.1; // Radians, make sure this is consistent with how you draw your arc
+const lineWidth = 6; // The thickness of the arc stroke
+
+// Assuming wallX, wallY, wallWidth, and wallHeight are defined according to your rectangle
+const wallX = W - 42;
+const wallY = 150;
+const wallWidth = 6;
+const wallHeight = 330;
+
+const wall2X = W - 42;
+const wall2Y = 480;
+const wall2Width = 42;
+const wall2Height = 120;
+
+  // Handle collision with the new horizontal wall
+  const horizontalWallX = W - 84;
+  const horizontalWallXSc = 4;
+  const horizontalWallY = 500;
+  const horizontalWallWidth = 42;
+  const horizontalWallHeight = 20;
+  const horizontalWall2X = 2;
 // Function to draw the throwing mechanism
 function throwingMech() {
 
@@ -491,20 +540,41 @@ function throwingMech() {
   ctx.fill();
   ctx.closePath();
 
-  /*ctx.beginPath();
-  ctx.rect(W - 139+51, 0, 6, 68);
+  ctx.beginPath();
+  ctx.fillStyle = 'pink';
+  ctx.strokeStyle='black';
+  ctx.lineWidth =2;
+  ctx.rect(W - 42, 480, 42, 120);
   ctx.fill();
-  ctx.closePath();*/
+  ctx.stroke();
+  ctx.closePath();
 
-  const radius = 100;
-  const startAngle = 0;
-  const endAngle = -1.0;
+  ctx.beginPath();
+  ctx.fillStyle = 'purple';
+  ctx.strokeStyle='black';
+  ctx.lineWidth =2;
+  ctx.rect(W - 84, 500, 42, 20);
+  ctx.fill();
+  ctx.stroke();
+  ctx.closePath();
 
+  ctx.beginPath();
+  ctx.fillStyle = 'purple';
+  ctx.strokeStyle='black';
+  ctx.lineWidth =2;
+  ctx.rect( 2, 500, 42, 20);
+  ctx.fill();
+  ctx.stroke();
+  ctx.closePath();
+
+  // NEED TO CHECK FOR THE COLLISIONS WITH THIS ARC
   // Draw the arc
   ctx.beginPath();
   ctx.arc(W - 139, 150, radius, startAngle, endAngle, true);
 ctx.lineWidth = 6;
+ctx.strokeStyle = 'pink';
   ctx.stroke();
+  ctx.closePath();
 
     ctx.restore();
 
@@ -525,7 +595,7 @@ canvas.addEventListener('contextmenu', function(event) {
 // This handler will be responsible for starting the drag event
 function dragStartHandler(event) {
   if (!isPause) {
-    alert("The game must be paused to move obstacles.");
+    showMessage("The game must be paused to move obstacles.");
     event.preventDefault(); // Prevent dragging
   } else {
     event.dataTransfer.setData("text/plain", event.target.id);
@@ -535,7 +605,7 @@ function dragStartHandler(event) {
 function removeObstacleFromCanvas(index, obstacleColor) {
   // Check if the obstacle exists
   if (index < 0 || index >= obstacles.length || !isPause) {
-    alert ('Please pause the simulation to remove obstacles.');
+    showMessage ('Please pause the simulation to remove obstacles.');
     return; // If the index is out of bounds, do nothing
   }
 
@@ -592,7 +662,7 @@ document.body.addEventListener('dragenter', function(event) {
 });
 document.body.addEventListener('drop', function(event) {
   if (!isPause) {
-    alert("You can only add obstacles to the canvas while the game is paused.");
+    showMessage("You can only add obstacles to the canvas while the game is paused.");
     event.preventDefault(); // Prevent the default behavior
     return;
   }
@@ -620,12 +690,12 @@ document.body.addEventListener('drop', function(event) {
 
 function addObstacleToCanvas(obstacleId, x, y) {
   if (!isPause) {
-    alert("The game must be paused to move obstacles.");
+    showMessage("The game must be paused to move obstacles.");
     return false;
   }
 
   if (obstacles.length >= 5) {
-    alert("Maximum number of obstacles reached. Cannot add more.");
+    showMessage("Maximum number of obstacles reached. Cannot add more.");
     return false;
   } 
 
@@ -638,7 +708,7 @@ function addObstacleToCanvas(obstacleId, x, y) {
   // Check if the dropped position is within the draggable zone
   if (x - 12.5 < zoneX || x + 12.5 > zoneX + zoneWidth ||
       y - 12.5 < zoneY || y + 12.5 > zoneY + zoneHeight) {
-    alert("Obstacles need to be placed within the designated zone.");
+        showMessage("Obstacles need to be placed within the designated zone.");
     return false;
   }
 
@@ -673,7 +743,7 @@ function addObstacleToCanvas(obstacleId, x, y) {
       color = 'unknown'; // Or any default color
   }
   if (isCollisionWithOtherObstacles(x, y, 25)) {
-    alert("Obstacles must not overlap with others.");
+    showMessage("Obstacles must not overlap with others.");
     return false; // Prevent adding the new obstacle
   }
 
@@ -706,7 +776,7 @@ function move(e) {
     if ((newX - obstacle.r/2 < zoneX || newX + obstacle.r/2 > zoneX + zoneWidth ||
         newY - obstacle.r/2 < zoneY || newY + obstacle.r/2 > zoneY + zoneHeight) ||
         isCollisionWithOtherObstacles(newX, newY, obstacle.r, focused.key)) {
-      //alert("Obstacles must be placed within the zone and not overlap with others.");
+
       // Optionally, reset obstacle position
       obstacle.originalX= obstacle.originalX;
       obstacle.originalY= obstacle.originalY;
@@ -771,9 +841,7 @@ function reflect(ball, obstacle) {
     ball.speedX = ball.speedX - 2 * dot * normal.x;
     ball.speedY = ball.speedY - 2 * dot * normal.y;
   
-    // This would be the place to adjust ball's speed to simulate energy loss
-     ball.speedX *= 0.99; 
-    ball.speedY *= 0.99;
+
   }
    
 // Function to reset the ball to its initial position and velocity
@@ -782,8 +850,9 @@ function resetBall() {
   ball.x = throwingMechanism.x + throwingMechanism.width / 2;
   ball.y = throwingMechanism.y - 120;
   ball.speedX = 0; // Reset to initial horizontal speed
-  ball.speedY = 5; // Reset to initial vertical speed
+  ball.speedY = 2; // Reset to initial vertical speed
   ball.correctionVelocity = { x: 0, y: 0 }; // Reset any correction velocities
+    shouldDrawDoor = false;
 
 }
 function ballFlipperCollision(ball, flipper) {
@@ -877,7 +946,64 @@ function handleFlipperCollision(ball, segmentStart, segmentEnd, distance) {
   ball.x += overlap * normal.x;
   ball.y += overlap * normal.y;
 }
+function ballArcSegmentCollision(ball, arcCenterX, arcCenterY, radius, startAngle, endAngle, lineWidth) {
+  // Calculate the distance from the ball to the arc's center
+  let dx = ball.x - arcCenterX;
+  let dy = ball.y - arcCenterY;
+  let distanceToCenter = Math.sqrt(dx * dx + dy * dy);
 
+  // Normalize the angle to be between 0 and 2*PI
+  let angleToBall = (Math.atan2(dy, dx) + 2 * Math.PI) % (2 * Math.PI);
+
+  // Convert angles to a 0 to 2*PI range
+  let normalizedStartAngle = (startAngle + 2 * Math.PI) % (2 * Math.PI);
+  let normalizedEndAngle = (endAngle + 2 * Math.PI) % (2 * Math.PI);
+
+  // Check if the ball's angle is within the arc segment's range
+  let isWithinAngleRange = normalizedStartAngle < normalizedEndAngle
+    ? angleToBall <= normalizedStartAngle || angleToBall >= normalizedEndAngle
+    : angleToBall >= normalizedEndAngle && angleToBall <= normalizedStartAngle;
+
+  // Check if the ball is within the arc's radial range
+  let isWithinRadialRange = distanceToCenter >= radius - lineWidth / 2 - ball.radius && 
+                            distanceToCenter <= radius + lineWidth / 2 + ball.radius;
+
+  if (isWithinAngleRange && isWithinRadialRange) {
+    // Collision detected
+    console.log('collided with arc segment', angleToBall, distanceToCenter);
+    // Reflect the ball's velocity
+    // The reflection is simplified here for the purpose of the example
+    ball.speedX *= -1;
+    ball.speedY *= -1;
+    return true; // Indicate that a collision has occurred
+  }
+
+  return false; // No collision with the arc segment
+}function ballWallCollision(ball, wallX, wallY, wallWidth, wallHeight, isHorizontal = false) {
+  // Check for collision with the sides of the wall (if it's vertical)
+  if (!isHorizontal && ball.y + ball.radius > wallY && ball.y - ball.radius < wallY + wallHeight) {
+    if (ball.x + ball.radius > wallX && ball.x - ball.radius < wallX + wallWidth) {
+      // Reflect the ball's X velocity
+      ball.speedX *= -1;
+      // Ensure the ball is placed just outside the wall bounds
+      ball.x = ball.x > wallX ? wallX + wallWidth + ball.radius : wallX - ball.radius;
+      return true; // Collision occurred
+    }
+  }
+
+  // Check for collision with the top/bottom of the wall (if it's horizontal)
+  if (isHorizontal && ball.x + ball.radius > wallX && ball.x - ball.radius < wallX + wallWidth) {
+    if (ball.y + ball.radius > wallY && ball.y - ball.radius < wallY + wallHeight) {
+      // Reflect the ball's Y velocity
+      ball.speedY *= -1;
+      // Ensure the ball is placed just outside the wall bounds
+      ball.y = ball.y > wallY ? wallY + wallHeight + ball.radius : wallY - ball.radius;
+      return true; // Collision occurred
+    }
+  }
+
+  return false; // No collision occurred
+}
 // Function to handle all ball collisions
 function handleCollisions() {
      
@@ -910,7 +1036,7 @@ function handleCollisions() {
     ball.y += ball.speedY;
   }
   // Handle collision with the flipper
- // ballFlipperCollision(ball, rectFlipper);
+  ballFlipperCollision(ball, rectFlipper);
          // Top border collision
     if (ball.y  < ball.radius && ball.speedY < 0) {
       ball.speedY *= -1;
@@ -929,11 +1055,18 @@ function handleCollisions() {
     ball.speedX *= -1;
   }
 
-  // Left border collision
-  if (ball.x - ball.radius < 0 && ball.speedX < 0) {
-    
-    ball.speedX *= -1;
-  }
+console.log('Before collision check, speedX:', ball.speedX);
+
+// Left border collision
+if (ball.x - ball.radius < 0 && ball.speedX < 0) {
+
+  ball.speedX *= -1;
+  ball.x = ball.radius;
+
+}
+
+
+
     let lineWidth = 2; // Example line width
 
    // Check for collision between the ball and an obstacle
@@ -953,10 +1086,57 @@ function handleCollisions() {
     }
   });
         // Check collision with the left flipper
-        checkFlipperBallCollision(leftFlipper, ball);
+        //checkFlipperBallCollision(leftFlipper, ball);
   
         // Check collision with the right flipper
-        checkFlipperBallCollision(rightFlipper, ball);
+        //checkFlipperBallCollision(rightFlipper, ball);
+    // First check collision with the arc segment
+  let collidedWithArcSegment = ballArcSegmentCollision(ball, arcCenterX, arcCenterY, radius, startAngle, endAngle, lineWidth);
+
+  // Only check for collision with the door if there was no collision with the arc segment
+  if (!collidedWithArcSegment && shouldDrawDoor) {
+    // Check for collision with the door
+    if (ball.x + ball.radius > doorX && ball.x - ball.radius < doorX + doorWidth &&
+        ball.y + ball.radius > doorY && ball.y - ball.radius < doorY + doorHeight) {
+      console.log('door hit');
+      // Reflect ball's X velocity for a vertical wall
+      ball.speedX *= -1;
+      ball.speedY *= -1;
+
+      // Adjust ball's position to avoid it getting stuck in the door
+      if (ball.x > doorX) {
+        // Ball hit the left side of the door
+        ball.x = doorX + doorWidth + ball.radius;
+      } else {
+        // Ball hit the right side of the door
+        ball.x = doorX - ball.radius;
+      }
+    }
+  }
+  const hasCollidedWithWall = ballWallCollision(ball, wallX, wallY, wallWidth, wallHeight);
+
+  const hasCollidedWithWall2 = ballWallCollision(ball, wall2X, wall2Y, wall2Width, wall2Height);
+
+const hasCollidedWithHorizontalWall = ballWallCollision(
+  ball,
+  horizontalWallX,
+  horizontalWallY,
+  horizontalWallWidth,
+  horizontalWallHeight,
+  true // This wall is horizontal
+);
+
+
+// Check for collision with the new horizontal wall
+const hasCollidedWithHorizontalWall2 = ballWallCollision(
+  ball,
+  horizontalWall2X,
+  horizontalWallY,
+  horizontalWallWidth,
+  horizontalWallHeight,
+  true // This wall is horizontal
+);
+
 
 
 }
@@ -982,11 +1162,18 @@ function drawDraggableZone() {
 function update() {
 
   if (isPause) {
+    if (!ball.isPaused) {
+      ball.pause(); // Pause the ball's movement
+      ball.isPaused = true;
+    }
     drawDraggableZone(); // Draw the draggable zone when the game is paused
-
 }
 
-if (!isPause) {
+if (!isPause) {  
+  if (ball.isPaused) {
+    ball.resume(); // Resume the ball's movement
+    ball.isPaused = false;
+  }
   // Define the arc parameters
   const arcCenterX = W - 120;
   const arcCenterY = 140;
@@ -1030,28 +1217,18 @@ if (!isPause) {
               ball.y = arcCenterY + correctionFactor * (ball.y - arcCenterY);
             }
           }
-  
-        } else if (ballAngle <= arcEndAngle) {
-          ball.inPlay = true;
-          drawDoor() ;
-        }
-        else {
-          // Normal motion if the ball is not on the arc path
-          ball.x += ball.speedX;
-          ball.y += ball.speedY;    
-           
-        }
-      } else if (ball.onThrowingMechanism) {
-        // Make the ball follow the mechanism if it is on it
-        ball.x = throwingMechanism.x + throwingMechanism.width / 2;
-        ball.y = throwingMechanism.y - ball.radius;
-        ball.inPlay = false; // Reset inPlay when ball is on the mechanism
-      
-      }
-  
-  
+        } 
+else {
+      // Normal motion if the ball is not on the arc path
+    // 
+      ball.x += ball.speedX;
+      ball.y += ball.speedY;
+              // Check if the ball has just exited the arc segment
+              if (!ball.inPlay && ballAngle < arcEndAngle) {
+                ball.inPlay = true; // Ball is now in play
+                shouldDrawDoor = true; // Set the flag to draw the door
+            }
     
-  
   // Apply correction velocity if set
   if (ball.correctionVelocity.x !== 0 || ball.correctionVelocity.y !== 0) {
     ball.x += ball.correctionVelocity.x;
@@ -1065,7 +1242,21 @@ if (!isPause) {
     if (Math.abs(ball.correctionVelocity.x) < 0.1) ball.correctionVelocity.x = 0;
     if (Math.abs(ball.correctionVelocity.y) < 0.1) ball.correctionVelocity.y = 0;
   }
+        }
+      } else if (ball.onThrowingMechanism) {
+        // Make the ball follow the mechanism if it is on it
+        ball.x = throwingMechanism.x + throwingMechanism.width / 2;
+        ball.y = throwingMechanism.y - ball.radius;
+        ball.inPlay = false; // Reset inPlay when ball is on the mechanism
+      
+      }
+  
+  
+    
+
   }
+    
+
   handleCollisions();
 
 
@@ -1077,20 +1268,20 @@ if (downKeyIsPressed) {
     throwingMechanism.height -= 1;
     throwingMechanism.y += 1;
     // Increase the compression time more significantly
-    throwingMechanism.compressionTime += 1; // Adjust this value as needed
+    throwingMechanism.compressionTime += 0.2; // Adjust this value as needed
   }
 } else {
   // Launch the ball if there's compression time accumulated
   if (throwingMechanism.compressionTime > 0) {
     // Calculate the force based on the compression time and stiffness
-    const force = throwingMechanism.compressionTime * throwingMechanism.stiffness;
+    const force = throwingMechanism.compressionTime;
     
     // Apply force to the ball that's on the mechanism
 
       if (ball.onThrowingMechanism) {
         // Calculate the acceleration (force divided by mass)
-        // Remember, force is mass times acceleration, so acceleration is force divided by mass
-        const acceleration = force / ball.mass;
+        // acceleration is force divided by mass
+        const acceleration = force/ball.mass; ;
         
         // Launch the ball upwards with the calculated acceleration
         // The negative sign is because we want to move the ball in the opposite direction of gravity (upwards)
@@ -1123,25 +1314,28 @@ if (downKeyIsPressed) {
   ctx.arc(W - 120, 140, 100, 0, -1.2, true);
   ctx.stroke();
   ctx.closePath();
-
+  if (shouldDrawDoor) {
+    drawDoor();
+    //shouldDrawDoor = false; // Reset the flag
+}
 
   throwingMechanism.draw();
   throwingMech();
     // Draw flippers after the balls
-    leftFlipper.draw();
-    leftFlipper.update();
+   /* leftFlipper.draw();
+  leftFlipper.update();
   
   rightFlipper.draw();
   rightFlipper.update();
   
   drawActualPositions(leftFlipper);
-drawActualPositions(rightFlipper);
+drawActualPositions(rightFlipper);*/
 
 
   // Draw the flippers and ball
   ball.draw();
-  //rectFlipper.draw();
-  //rectFlipper.update();
+  rectFlipper.draw();
+  rectFlipper.update();
   obstacles.forEach(obstacle => {
     obstacle.draw();
   }); 
@@ -1157,6 +1351,22 @@ document.getElementById('playButton').addEventListener('click', function() {
   // Call this function to initially set the correct draggability state
   this.textContent = isPause ? 'Pause' : 'Play'; // Change button text based on state
 });
+
+document.getElementById('refreshButton').addEventListener('click', function() {
+  window.location.reload();
+});
+
+document.getElementById('playMusicButton').addEventListener('click', function() {
+  const playMusicButton = document.getElementById('playMusicButton');
+  if (backgroundMusic.paused) {
+      backgroundMusic.play();
+      playMusicButton.textContent = "Pause Music"; // Change button text to "Pause Music"
+  } else {
+      backgroundMusic.pause();
+      playMusicButton.textContent = "Play Music"; // Change button text to "Play Music"
+  }
+});
+
 
 
 let leftKeyIsPressed = false;
@@ -1198,6 +1408,17 @@ window.onload = () => {
       downKeyIsPressed = false;
     };
   });
+
+    const storedMaterial = localStorage.getItem('ballMaterial');
+    if (storedMaterial) {
+      ball.setPhysicalProperties(storedMaterial);
+    }
+    const storedGravity = localStorage.getItem('selectedGravity');
+    if (storedGravity) {
+        GRAVITY = parseFloat(storedGravity);
+        document.getElementById('gravity').value = storedGravity;
+    }
+  
 // Mousedown event listener
 canvas.addEventListener("mousedown", function(e) {
   isMouseDown = true;
@@ -1205,7 +1426,7 @@ canvas.addEventListener("mousedown", function(e) {
   for (let i = 0; i < obstacles.length; i++) {
       if (intersects(obstacles[i])) {
           if (!isPause) {
-              alert("You can't move obstacles while the game is running.");
+            showMessage("You can't move obstacles while the game is running.");
               return;
           }
           focused.state = true;

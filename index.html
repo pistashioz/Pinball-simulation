@@ -8,6 +8,7 @@
 </head>
 
 <body>
+    <div id="messageContainer"></div>
 
         <canvas id="canvas" width="400" height="600"></canvas>
         <div id="obstacle-images">
@@ -22,13 +23,21 @@
 
 
     <div id = 'custom'>
+        <audio id="backgroundMusic" src="assets/audio/backgroundmusic.mp3" loop hidden></audio>
+<button id="playMusicButton" class="control-button">Play Music</button>
+
         <button id="playButton" class="control-button">Play</button>
 
-        <div id = 'formGravity'>
-            <label for = 'gravity'>Gravity value</label>
-            <input type  = 'number' name = 'gravity' id= 'gravity' min = 0 max = 25>
-            <input type = 'submit' value ='submit'>
+        <div id='formGravity'>
+            <label for='gravity'>Gravity value</label>
+            <select id='gravity'>
+                <option value='0.2'>0.2</option>
+                <option value='0.1'>0.1</option>
+                <option value='0.05'>0.05</option>
+            </select>
+            <input type='submit' value='Submit' id='submitGravity'>
         </div>
+        
         <div class="dropdown">
             <button  class="dropbtn" onclick="showToggle()">Ball Material</button>
             <div id="myDropdown" class="dropdown-content">
@@ -38,6 +47,8 @@
               </div>
               
         </div>
+        <button id="refreshButton" class="control-button" title="Refresh the page!">Bugging? We're just learning!</button>
+
     </div>
 
     

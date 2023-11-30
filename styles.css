@@ -25,10 +25,8 @@ html, body {
   height: 100%; /* ensure the html and body are at least the height of the viewport */
 }
 
-
 .background {
   background: url('/assets/img/elementos.png')  ;
-
   background-size: cover; 
   width: 100%;
   text-align: center;
@@ -76,6 +74,34 @@ html, body {
 
 }
 
+#obstacle-images{
+  background-color: rgba(22, 35, 149, 0.2);
+  width: 30%;
+  backdrop-filter: blur(5px);
+  margin-top: 120px;
+  border-radius: 10px;
+  border-style: outset;
+  border-width: 10px;
+  border-color: rgb(132, 98, 200);
+}
+
+#obstacle-images {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px; /* Adjust as needed */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#obstacle1,
+ #obstacle2,
+ #obstacle3
+ {
+  cursor: grab;
+}
+
 
 #custom{
   width: 20%;
@@ -109,105 +135,127 @@ html, body {
 .control-button:hover, .control-button:focus {
   background-color: #8b9756;
 }
-#obstacle-images {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  margin-top: 20px; /* Adjust as needed */
-  margin-left: auto;
-  margin-right: auto;
+
+#refreshButton {
+  width: 80%; /* Adjust as needed */
 }
 
 
-#obstacle1,
- #obstacle2,
- #obstacle3
- {
-  cursor: grab;
-}
-
-#obstacle1:active,
- #obstacle2:active,
- #obstacle3:active
- {
-  cursor: pointer;
-}
-
-
-#formGravity{
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 20%;
-  box-sizing: content-box;
-  width: 200px;
-  height: 180px;	
+#messageContainer {
+  display: none; /* Hidden by default */
+  position: absolute;
+  z-index: 2;
+  top: 86%;
+  left: 38.5%;
   background-color: #DB92AD;
   overflow: hidden;
   border-radius: 10px;
   border-style: outset;
   border-width: 10px;
   border-color: rgb(233, 231, 208);
-
+  text-align: center;
+  padding: 10px; 
+  font-size: 1em; 
+  color: #676767; 
+  white-space: nowrap; 
 }
-form{
-  margin: auto auto;
+/* Pop-in animation */
+@keyframes popIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Pop-out animation */
+@keyframes popOut {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+#formGravity {
   display: block;
   margin-left: auto;
   margin-right: auto;
+  margin-top: 20%;
+  box-sizing: content-box;
+  width: 200px;
+  height: 180px; 
+  background-color: #DB92AD;
+  overflow: hidden;
+  border-radius: 10px;
+  border-style: outset;
+  border-width: 10px;
+  border-color: rgb(233, 231, 208);
+}
+
+form {
+  margin: auto;
+  display: block;
   width: 100%;
   position: relative;
 }
 
-label, input{
-display: block;	
-}
-input{
-outline: none;
-padding: 10px;
-display: block;
-margin-left: auto; 
-margin-right: auto;
-font-weight: bold;
-color: #676767;
-transition: border 0.5s;
--webkit-transition: border 0.5s;
--moz-transition: border 0.5s;
--o-transition: border 0.5s;
-border-radius: 20px;
--webkit-box-sizing:border-box;
--moz-box-sizing:border-box;
-box-sizing:border-box;
-border-color: pink;
-}
-input:focus{
-border: solid 3px pink;
+label, select, input {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-input[type="submit"]{
-border: solid 3px rgb(233, 231, 208);
-border-style: inset;
-background-color: #5fa0a6;
-color: white;
-height: 50px;
+select, input {
+  outline: none;
+  padding: 10px;
+  font-weight: bold;
+  color: #676767;
+  transition: border 0.5s;
+  border-radius: 20px;
+  box-sizing: border-box;
+  border: 2px solid pink; /* Adjust as needed */
+}
+
+select:focus, input:focus {
+  border: solid 3px pink;
+}
+
+input[type="submit"] {
+  border: solid 3px rgb(233, 231, 208);
+  border-style: inset;
+  background-color: #5fa0a6;
+  color: white;
+  height: 50px;
   width: 100px;
-cursor: pointer;
-margin-top: 10px;
-font-size: 1.29em;
--webkit-transition: background-color 0.5s;
--moz-transition: background-color 0.5s;
--o-transition: background-color 0.5s;
-transition: background-color 0.5s;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 1.29em;
+  transition: background-color 0.5s;
 }
-input[type="submit"]:hover{
-background-color: #479097;
 
+input[type="submit"]:hover {
+  background-color: #479097;
 }
-label{
-font-size: 1.5em;
-margin-top: 20px;
-padding-left: 15px;
+
+label {
+  font-size: 1.5em;
+  margin-top: 20px;
+  padding-left: 15px;
 }
 
 /* Dropdown Button */
@@ -243,7 +291,6 @@ transition: background-color 0.5s;
   width: 50%;
   margin-top: 20%;
 }
-
 
 /* Dropdown Content (Hidden by Default) */
 .dropdown-content {
