@@ -38,7 +38,9 @@ const BOUNCE_THRESHOLD = 2.5; // Minimum speed for bounce
 //sound effects
 const bounceSound = new Audio("assets/audio/jump.wav");
 const bounceFlippers = new Audio("assets/audio/jumpFlipper.wav")
-const grabObstacles = new Audio('assets/Audio/grab.wav')
+const addObstacle = new Audio('assets/audio/click.wav')
+const releaseObstacle = new Audio('assets/audio/release.wav')
+const grabObstacles = new Audio('assets/Audio/drag.wav')
 
 // Close the dropdown menu if the user clicks outside of it
 window.onclick = function(event) {
@@ -748,6 +750,7 @@ function addObstacleToCanvas(obstacleId, x, y) {
   }
 
   // Create a new Obstacle object with the correct color and add it to your obstacles array
+  addObstacle.play();
   var newObstacle = new Obstacle(x, y, 25, color,tempColor);
   obstacles.push(newObstacle);
   return true;
@@ -1429,6 +1432,7 @@ canvas.addEventListener("mousedown", function(e) {
             showMessage("You can't move obstacles while the game is running.");
               return;
           }
+          grabObstacles.play()
           focused.state = true;
           focused.key = i;
           obstacles[i].r *= 1.1; // Indicate selection
@@ -1446,6 +1450,7 @@ canvas.addEventListener("mousemove", function(e) {
 canvas.addEventListener("mouseup", function() {
   isMouseDown = false;
   if (focused.state) {
+      releaseObstacle.play()
       obstacles[focused.key].r /= 1.1; // Reset the radius
       focused.state = false;
       focused.key = null;
