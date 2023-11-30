@@ -77,7 +77,7 @@ class Ball {
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "#255f85"; // Blue color
+    ctx.fillStyle = "#0d101b"; // black color
     ctx.fill();
     ctx.closePath();
   }
